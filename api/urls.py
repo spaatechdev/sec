@@ -36,6 +36,9 @@ urlpatterns = [
     path('vendor-delete', views.vendorDelete, name='vendorDelete'),
     path('vendor-export', views.vendorExport, name='vendorExport'),
 
+    path('config-user-add', views.configUserAdd, name='configUserAdd'),
+    path('config-user-edit', views.configUserEdit, name='configUserEdit'),
+
     path('customer-list', views.customerList, name='customerList'),
     path('customer-add', views.customerAdd, name='customerAdd'),
     path('customer-edit', views.customerEdit, name='customerEdit'),
@@ -91,11 +94,18 @@ urlpatterns = [
     path('purchase-order-delete', views.purchaseOrderDelete, name='purchaseOrderDelete'),
     path('purchase-order-details', views.purchaseOrderDetails, name='purchaseOrderDetails'),
 
+    path('transaction-type-list', views.transactionTypeList, name='transactionTypeList'),
+    path('transaction-type-add', views.transactionTypeAdd, name='transactionTypeAdd'),
+    path('transaction-type-edit', views.transactionTypeEdit, name='transactionTypeEdit'),
+    path('transaction-type-delete', views.transactionTypeDelete, name='transactionTypeDelete'),
+
     path('store-item-list', views.storeItemList, name='storeItemList'),
     path('store-item-add', views.storeItemAdd, name='storeItemAdd'),
     path('store-item-edit', views.storeItemEdit, name='storeItemEdit'),
     path('store-item-delete', views.storeItemDelete, name='storeItemDelete'),
     path('store-item-export', views.storeItemExport, name='storeItemExport'),
+    # path('store-item-report-export', views.storeItemReportExport, name='storeItemReportExport'),
+
 
     path('store-transaction-list', views.storeTransactionList, name='storeTransactionList'),
     path('store-transaction-add', views.storeTransactionAdd, name='storeTransactionAdd'),
@@ -107,5 +117,57 @@ urlpatterns = [
     path('job-order-add', views.jobOrderAdd, name='jobOrderAdd'),
     path('job-order-edit', views.jobOrderEdit, name='jobOrderEdit'),
     path('job-order-delete', views.jobOrderDelete, name='jobOrderDelete'),
-    # path('job-order-details', views.jobOrderDetails, name='jobOrderDetails'),
+    path('job-order-details', views.jobOrderDetails, name='jobOrderDetails'),
+
+    # path('material-issue-details', views.materialIssueDetails, name='materialIssueDetails'),
+    path('get-actual-quantity', views.getActualQuantity, name='getActualQuantity'),
+    path('material-issue-add', views.materialIssueAdd, name='materialIssueAdd'),
+    path('material-issue-edit', views.materialIssueEdit, name='materialIssueEdit'),
+    path('material-issue-details', views.materialIssueDetails, name='materialIssueDetails'),
+
+    # path grn inspection ---developed by saswata
+    path('grn-inspection-details-transaction', views.getGrnInspectionTransactionDetail, name='getGrnInspectionTransactionDetail'),
+    path('grn-inspection-list-Add', views.addGrnDetailisInsTransaction, name='addGrnDetailisInsTransaction'),
+    path('grn-inspection-head-list', views.grnInspectionHeaderList, name='grnInspectionHeaderList'), 
+
+    path('material-return-add', views.materialReturnAdd, name='materialReturnAdd'),
+
+    # path on transit transaction ---developed by saswata
+
+    path('on-transit-transaction-list', views.getOnTransitTransactionHeadersList, name='getOnTransitTransactionHeadersList'),
+    path('on-transit-transaction-all-list', views.getOnTransitTransactionDetalisList, name='getOnTransitTransactionDetalisList'),
+    # path('store-transfer-report-export', views.storeTransferReportExport, name='storeTransferReportExport'),
+    
+    # material out
+    path('material-out-details-add', views.materialOutDetailsAdd, name='materialOutDetailsAdd'),
+    path('material-out-details-delete', views.materialOutDetailsDelete, name='materialOutDetailsDelete'),
+    path('material-out-details-edit', views.materialOutDetailsEdit, name='materialOutDetailsEdit'),
+    # path('', views.grnInspectionHeaderList, name='grnInspectionHeaderList'), reportStockTransfer
+
+    # material in
+    path('material-in-details-add', views.materialInDetailsAdd, name='materialInDetailsAdd'),
+    # path('grn-inspection-list-Add', views.addGrnDetailisInsTransaction, name='addGrnDetailisInsTransaction'),
+    # path('grn-inspection-head-list', views.grnInspectionHeaderList, name='grnInspectionHeaderList'),
+
+    # physical Inspection on Store Items --- developed by saswata
+    path('physical-inspection-header-list', views.getPhysicalInspectionHeadersList, name='getPhysicalInspectionHeadersList'),
+    path('physical-inspection-details-add', views.physicalInspectionDetailsAdd, name='physicalInspectionDetailsAdd'),
+
+    # purchase bill url --- developed by saswata
+    path('purchase-bill-header-list', views.getPurchaseBillHeadersList, name='getPurchaseBillHeadersList'),
+    path('purchase-bill-details-add', views.purchaseBillDetailsAdd, name='purchaseBillDetailsAdd'),
+    path('purchase-bill-details-edit', views.purchaseBillDetailsEdit, name='purchaseBillDetailsEdit'),
+    path('purchase-bill-details-delete', views.purchaseBillDetailsDelete, name='purchaseBillDetailsDelete'),
+
+    path('item-tracking-report', views.reportItemTrackingReport, name='reportItemTrackingReport'),
+    path('report-inventory-summary', views.reportInventorySummary, name='reportInventorySummary'),
+    path('report-inventory-storewise', views.reportInventoryStorewise, name='reportInventoryStorewise'),
+    path('report-stock-transfer', views.reportStockTransfer, name='reportStockTransfer'),
+    path('report-purchase-order-by-vendor', views.reportPurchaseOrderByVendor, name='reportPurchaseOrderByVendor'),
+    path('report-purchase-order-by-item', views.reportPurchaseOrderByItem, name='reportPurchaseOrderByItem'),
+    path('report-active-purchase-order', views.reportActivePurchaseOrder, name='reportActivePurchaseOrder'),
+    path('report-active-purchase-MaterialIssue', views.reportPurchaseMaterailIssue, name='reportPurchaseMaterailIssue'),
+    path('report-active-vendor-IssueRecep', views.reportVendorIssueRecp, name='reportVendorIssueRecp'),
+
+    path('corn-job-store-item-quantity-update', views.cornJobStoreItemQuantityUpdate, name='cornJobStoreItemQuantityUpdate'),
 ]

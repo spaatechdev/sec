@@ -33,6 +33,10 @@ urlpatterns = [
     path('user-add', views.userAdd, name='userAdd'),
     path('user-edit/<int:id>', views.userEdit, name='userEdit'),
 
+    path('client-config-list', views.clientConfigList, name='clientConfigList'),
+    path('client-config-add', views.clientConfigAdd, name='clientConfigAdd'),
+     path('client-config-edit/<int:id>', views.clientConfigEdit, name='clientConfigEdit'),
+
     path('vendor-list', views.vendorList, name='vendorList'),
     path('vendor-add', views.vendorAdd, name='vendorAdd'),
     path('vendor-edit/<int:id>', views.vendorEdit, name='vendorEdit'),
@@ -83,17 +87,77 @@ urlpatterns = [
     path('purchase-order-view/<int:id>', views.purchaseOrderView, name='purchaseOrderView'),
     path('purchase-order-print/<int:id>', views.purchaseOrderPrint, name='purchaseOrderPrint'),
 
+    path('transaction-type-list-admin', views.transactionTypeList, name='transactionTypeList'),
+    path('transaction-type-add', views.transactionTypeAdd, name='transactionTypeAdd'),
+    path('transaction-type-edit/<int:id>', views.transactionTypeEdit, name='transactionTypeEdit'),
+
     path('store-item-list', views.storeItemList, name='storeItemList'),
     path('store-item-add', views.storeItemAdd, name='storeItemAdd'),
     path('store-item-edit/<int:id>', views.storeItemEdit, name='storeItemEdit'),
+    
 
     path('store-transaction-list', views.storeTransactionList, name='storeTransactionList'),
     path('store-transaction-add', views.storeTransactionAdd, name='storeTransactionAdd'),
     path('store-transaction-edit/<int:id>', views.storeTransactionEdit, name='storeTransactionEdit'),
     path('store-transaction-view/<int:id>', views.storeTransactionView, name='storeTransactionView'),
+    
 
     path('job-order-list', views.jobOrderList, name='jobOrderList'),
     path('job-order-add', views.jobOrderAdd, name='jobOrderAdd'),
     path('job-order-edit/<int:id>', views.jobOrderEdit, name='jobOrderEdit'),
     # path('job-order-view/<int:id>', views.jobOrderView, name='jobOrderView'),
+
+    # material issue url --- developed by saswata
+    path('material-issue-list',views.materialIssueList, name='materialIssueList'),
+    path('material-issue-add',views.materialIssueAdd, name='materialIssueAdd'),
+    path('material-issue-edit/<int:id>',views.materialIssueEdit, name='materialIssueEdit'),
+    path('material-issue-view/<int:id>',views.materialIssueView, name='materialIssueView'),
+    path('material-issue-print/<int:id>',views.materialIssuePrint, name='materialIssuePrint'),
+
+    path('grn-inspection-list',views.grnInspectionListView , name = 'grnInspectionListView'),
+    path('grn-inspection-add',views.grnInspectionAdd , name = 'grnInspectionAdd'),
+    path('grn-inspection-edit/<int:id>',views.grnInspectionEdit , name = 'grnInspectionEdit'),
+    path('grn-inspection-view/<int:id>',views.grnInspectionView , name = 'grnInspectionView'),
+
+     # path grn inspection ---developed by saswata
+    path('material-return-list',views.materialReturnList, name='materialReturnList'),
+    path('material-return-add',views.materialReturnAdd, name='materialReturnAdd'),
+    path('material-return-edit/<int:id>',views.materialReturnEdit, name='materialReturnEdit'),
+    path('material-return-view/<int:id>',views.materialReturnView, name='materialReturnView'),
+
+    # path on transit transaction ---developed by saswata
+
+    # material out
+    path('material-out-list',views.materialOutList, name='materialOutList'),
+    path('material-out-add',views.materialOutAdd, name='materialOutAdd'),
+    path('material-out-edit/<int:id>',views.materialOutEdit, name='materialOutEdit'),
+    path('material-out-view/<int:id>',views.materialOutView, name='materialOutView'),
+    path('material-out-print/<int:id>',views.materialOutPrint, name='materialOutPrint'), 
+    
+
+    # material in 
+    path('material-in-list',views.materialInList, name='materialInList'),
+    path('material-in-add',views.materialInAdd, name='materialInAdd'),
+    path('material-in-view/<int:id>',views.materialInView, name='materialInView'),
+
+    # physical inspection on store items ---developed by saswata
+    path('physical-inspection-list',views.physicalInspectionList, name='physicalInspectionList'),
+    path('physical-inspection-add',views.physicalInspectionAdd, name='physicalInspectionAdd'),
+    path('physical-inspection-view/<int:id>',views.physicalInspectionView, name='physicalInspectionView'),
+
+    # purchase bill url ---developed by Saswata
+    path('purchase-bill-list',views.purchaseBillList, name='purchaseBillList'),
+    path('purchase-bill-add',views.purchaseBillAdd, name='purchaseBillAdd'),
+    path('purchase-bill-edit/<int:id>',views.purchaseBillEdit, name='purchaseBillEdit'),
+    path('purchase-bill-view/<int:id>',views.purchaseBillView, name='purchaseBillView'),
+   
+    path('report-item-tracking-report',views.reportItemTrackingReport, name='reportItemTrackingReport'),
+    path('report-inventory-summary', views.reportInventorySummary, name='reportInventorySummary'),
+    path('report-inventory-storewise', views.reportInventoryStorewise, name='reportInventoryStorewise'),
+    path('report-stock-transfer',views.reportStockTransfer, name='reportStockTransfer'),
+    path('report-purchase-order-by-vendor', views.reportPurchaseOrderByVendor, name='reportPurchaseOrderByVendor'),
+    path('report-purchase-order-by-item', views.reportPurchaseOrderByItem, name='reportPurchaseOrderByItem'),
+    path('report-active-purchase-order', views.reportActivePurchaseOrder, name='reportActivePurchaseOrder'),
+    path('report-active-purchase-materialIssue', views.reportActivePurchaseMaterialIssue, name='reportActivePurchaseMaterialIssue'),
+    path('report-active-vendor-Reciept-materialIssue', views.reportActiveVendorIssueReciept, name='reportActiveVendorIssueReciept'),
 ]

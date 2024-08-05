@@ -5,7 +5,7 @@ from django.utils.timezone import now
 from datetime import datetime
 from django.core.validators import RegexValidator
 from django.utils.text import gettext_lazy as _
-
+import django
 
 class Role(models.Model):
     name = models.CharField(max_length=50)
@@ -91,6 +91,28 @@ class User(AbstractBaseUser):
         # Simplest possible answer: All admins are staff
         return self.is_superuser
 
+class Configuration_User(models.Model):
+    client_name = models.CharField(max_length=50, blank=True, null=True)
+    client_address = models.CharField(max_length=50, blank=True, null=True)
+    client_work_address = models.CharField(max_length=50, blank=True, null=True)
+    client_gst = models.CharField(max_length=50, blank=True, null=True)
+    client_contact = models.CharField(max_length=50, blank=True, null=True)
+    finacial_year_start = models.DateField(blank=True, null=True)
+    finacial_year_end =models.DateField(blank=True, null=True)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+
+    def __str__(self):
+        return self.client_name
+
+    class Meta:
+        managed = True
+        db_table = 'configuration_user'
+        verbose_name_plural = 'configuration_user'
+
 
 class Country(models.Model):
     name = models.CharField(max_length=50)
@@ -148,6 +170,7 @@ class Vendor(models.Model):
     contact_no = models.CharField(max_length=15, blank=True, null=True)
     contact_name = models.CharField(max_length=50, blank=True, null=True)
     contact_email = models.CharField(max_length=100, blank=True, null=True)
+    store_present = models.SmallIntegerField(default=0)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -283,7 +306,6 @@ class Item_Type(models.Model):
     name = models.CharField(max_length=50, blank=True, null=True)
     item_category = models.ForeignKey(
         Item_Category, on_delete=models.CASCADE, blank=True, null=True)
-    hsn_code = models.CharField(max_length=40, blank=True, null=True)
     gst_percentage = models.DecimalField(
         default=0, max_digits=10, decimal_places=2)
     status = models.SmallIntegerField(default=1)
@@ -323,6 +345,7 @@ class Item(models.Model):
         Item_Type, on_delete=models.CASCADE, blank=True, null=True)
     uom = models.ForeignKey(
         Uom, on_delete=models.CASCADE, blank=True, null=True)
+    hsn_code = models.CharField(max_length=40, blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
@@ -350,7 +373,7 @@ class Store(models.Model):
     contact_no = models.CharField(max_length=15, blank=True, null=True)
     contact_email = models.CharField(max_length=100, blank=True, null=True)
     manager_name = models.CharField(max_length=50, blank=True, null=True)
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    vendor = models.OneToOneField(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -513,18 +536,142 @@ class Transaction_Type(models.Model):
         verbose_name_plural = 'transaction_types'
 
 
-class Store_Transaction(models.Model):
+class Job_Order(models.Model):
+    order_number = models.CharField(max_length=50, blank=True, null=True)
+    order_date = models.DateField(blank=True, null=True)
+    manufacturing_type = models.CharField(max_length=20, choices=[("Self","Self"), ("Third party","Third party")], blank=True, null=True)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    with_item = models.CharField(max_length=20, choices=[("True", True), ("False", False)], blank=True,null=True)
+    # total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    notes = models.TextField(blank=True, null=True)
+    status = models.SmallIntegerField(default=1) #0 for not recieved 1 for recieved without inspection 2 for recived with inspection 
+    deleted = models.BooleanField(default=0)
+    material_reciept = models.SmallIntegerField(default=0)
+    material_issue = models.SmallIntegerField(default=0)
+    created_at = models.DateTimeField(default=django.utils.timezone.now)
+    updated_at = models.DateTimeField(default=django.utils.timezone.now)
+    def __str__(self):
+        return self.order_number
+
+    class Meta:
+        managed = True
+        db_table = 'job_order_headers'
+        verbose_name_plural = 'job_order_headers'
+
+
+class Job_Order_Detail(models.Model):
+    DIRECTION_CHOICES = [
+        ('incoming', 'Incoming'),
+        ('outgoing', 'Outgoing'),
+    ]
+
+    job_order_header = models.ForeignKey(Job_Order, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    quantity_result = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+    direction = models.CharField(max_length=20, choices=DIRECTION_CHOICES, default='outgoing')
+
+    def __str__(self):
+        return self.job_order_header.order_number
+
+    class Meta:
+        managed = True
+        db_table = 'job_order_details'
+        verbose_name_plural = 'job_order_details'
+
+
+# class Job_Order_Detail_Sent(models.Model):
+#     job_order_detail = models.ForeignKey(Job_Order_Detail, on_delete=models.CASCADE)
+#     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
+#     bill_of_material = models.ForeignKey(Bill_Of_Material, on_delete=models.CASCADE, blank=True, null=True)
+#     quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+#     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+#     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+#     status = models.SmallIntegerField(default=1)
+#     deleted = models.BooleanField(default=0)
+#     created_at = models.DateTimeField(default=now)
+#     updated_at = models.DateTimeField(default=now)
+#
+#     def __str__(self):
+#         return self.job_order_detail.job_order_header.order_number
+#
+#     class Meta:
+#         managed = True
+#         db_table = 'job_order_detail_sent'
+#         verbose_name_plural = 'job_order_detail_sent'
+
+class Grn_Inspection_Transaction(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     transaction_type = models.ForeignKey(Transaction_Type, on_delete=models.CASCADE, blank=True, null=True)
     purchase_order_header = models.ForeignKey(Purchase_Order, on_delete=models.CASCADE, blank=True, null=True)
+    job_order = models.ForeignKey(Job_Order, on_delete=models.CASCADE, blank=True, null=True) 
     transaction_number = models.CharField(max_length=25, blank=True, null=True)
     transaction_date = models.DateField(blank=True, null=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ins_done = models.SmallIntegerField(default=0, blank=True, null=True)
+    ins_completed = models.SmallIntegerField(default=0, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
     updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.transaction_number
+
+    class Meta:
+        managed = True
+        db_table = 'grn_inspection_transaction_headers'
+        verbose_name_plural = 'grn_inspection_transaction_headers'
+
+
+class Grn_Inspection_Transaction_Detail(models.Model):
+    grn_inspection_transaction_header = models.ForeignKey(Grn_Inspection_Transaction, on_delete=models.CASCADE, blank=True, null=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, blank=True, null=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    accepted_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    reject_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    inspection_date = models.DateField(blank=True, null=True)
+    ins_done = models.SmallIntegerField(default=0)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    gst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_with_gst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self. grn_Inspection_Transaction_header.transaction_number
+
+    class Meta:
+        managed = True
+        db_table = 'grn_inspection_transaction_Detail'
+        verbose_name_plural = 'grn_inspection_transaction_Detail'
+
+
+class Store_Transaction(models.Model):
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True,related_name="vendor" )
+    vendor_from = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True, related_name="vendor_from")
+    transaction_type = models.ForeignKey(Transaction_Type, on_delete=models.CASCADE, blank=True, null=True)
+    purchase_order_header = models.ForeignKey(Purchase_Order, on_delete=models.CASCADE, blank=True, null=True)
+    transaction_number = models.CharField(max_length=25, blank=True, null=True)
+    transaction_date = models.DateField(blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    vehicle = models.CharField(max_length=25, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+    job_order = models.ForeignKey(Job_Order, on_delete=models.CASCADE, blank=True, null=True)
+    grn_inspection =  models.ForeignKey(Grn_Inspection_Transaction, on_delete=models.CASCADE, blank=True, null=True)
+    reference_id = models.SmallIntegerField(default=0)
 
     def __str__(self):
         return self.transaction_number
@@ -557,14 +704,42 @@ class Store_Transaction_Detail(models.Model):
         db_table = 'store_transaction_details'
         verbose_name_plural = 'store_transaction_details'
 
+# on transit transaction -- developed by saswata 
+# transaction_date date when material out  happned flag be 1 if material in on that particular transaction occured
 
-class Job_Order(models.Model):
-    order_number = models.CharField(max_length=50, blank=True, null=True)
-    order_date = models.DateField(blank=True, null=True)
-    manufacturing_type = models.CharField(max_length=20, choices=[("Self","Self"), ("Third party","Third party")], blank=True, null=True)
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
-    with_item = models.CharField(max_length=20, choices=[("True", True), ("False", False)], blank=True,null=True)
-    # total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+class On_Transit_Transaction(models.Model):
+    transaction_number = models.CharField(max_length=25, blank=True, null=True)
+    transaction_date = models.DateField(blank=True, null=True)
+    transaction_in_date = models.DateField(blank=True, null=True)
+    vechical_no = models.CharField(max_length=50, blank=True, null=True)
+    source_store =  models.ForeignKey(
+        Store, on_delete=models.CASCADE, blank=True, null=True , related_name="source_store")
+    destination_store =  models.ForeignKey(
+        Store, on_delete=models.CASCADE, blank=True, null=True, related_name="destination_store")
+    flag = models.SmallIntegerField(default=0)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.transaction_number
+
+    class Meta:
+        managed = True
+        db_table = 'on_transit_transaction_headers'
+        verbose_name_plural = 'on_transit_transaction_headers'
+
+
+class On_Transit_Transaction_Details(models.Model):
+    on_transit_transaction_header = models.ForeignKey(On_Transit_Transaction, on_delete=models.CASCADE, blank=True, null=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    recieved_quntity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    reject_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
@@ -572,51 +747,214 @@ class Job_Order(models.Model):
     updated_at = models.DateTimeField(default=now)
 
     def __str__(self):
-        return self.order_number
+        return self.on_transit_transaction_header.transaction_number
 
     class Meta:
         managed = True
-        db_table = 'job_order_headers'
-        verbose_name_plural = 'job_order_headers'
+        db_table = 'On_Transit_Transaction_details'
+        verbose_name_plural = 'On_Transit_Transaction_details'
 
 
-class Job_Order_Detail(models.Model):
-    job_order_header = models.ForeignKey(Job_Order, on_delete=models.CASCADE)
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
-    # bill_of_material = models.ForeignKey(Bill_Of_Material, on_delete=models.CASCADE, blank=True, null=True)
-    # quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
-    # rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    # amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+# physical Inspection on Store Items --- developed by saswata
+class Physical_Inspection(models.Model):
+    transaction_number = models.CharField(max_length=50, blank=True, null=True)
+    inspection_date = models.DateField(blank=True, null=True)
+    store =  models.ForeignKey(Store, on_delete=models.CASCADE, blank=True, null=True)
+    item_catagories = models.ForeignKey(Item_Category, on_delete=models.CASCADE, blank=True, null=True)
+    item_type = models.ForeignKey(Item_Type, on_delete=models.CASCADE, blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
-    created_at = models.DateTimeField(default=now())
-    updated_at = models.DateTimeField(default=now())
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+
 
     def __str__(self):
-        return self.job_order_header.order_number
+        return self.transaction_number
 
     class Meta:
         managed = True
-        db_table = 'job_order_details'
-        verbose_name_plural = 'job_order_details'
+        db_table = 'physical_inspection_headers'
+        verbose_name_plural = 'physical_inspection_headers'
 
 
-# class Job_Order_Detail_Sent(models.Model):
-#     job_order_detail = models.ForeignKey(Job_Order_Detail, on_delete=models.CASCADE)
-#     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
-#     bill_of_material = models.ForeignKey(Bill_Of_Material, on_delete=models.CASCADE, blank=True, null=True)
-#     quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
-#     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-#     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-#     status = models.SmallIntegerField(default=1)
-#     deleted = models.BooleanField(default=0)
-#     created_at = models.DateTimeField(default=now)
-#     updated_at = models.DateTimeField(default=now)
-#
-#     def __str__(self):
-#         return self.job_order_detail.job_order_header.order_number
-#
-#     class Meta:
-#         managed = True
-#         db_table = 'job_order_detail_sent'
-#         verbose_name_plural = 'job_order_detail_sent'
+class Physical_Inspection_Details(models.Model):
+    physical_inspection_header = models.ForeignKey(Physical_Inspection, on_delete=models.CASCADE, blank=True, null=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
+    booked_quantity = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    physical_quantity = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    adjusted_quantity = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    notes = models.TextField(blank=True, null=True)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+
+
+    def __str__(self):
+        return self.physical_inspection_header.transaction_number
+
+    class Meta:
+        managed = True
+        db_table = 'physical_inspection_details'
+        verbose_name_plural = 'physical_inspection_details'
+
+
+# purchase bill ---developed by saswata
+class Purchase_Bill(models.Model):
+    transaction_number = models.CharField(max_length=50, blank=True, null=True)
+    transaction_date = models.DateField(blank=True, null=True)
+    invoice_no = models.CharField(max_length=50, blank=True, null=True)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    e_way_no =  models.CharField(max_length=50, blank=True, null=True)
+    e_way_date = models.DateField(blank=True, null=True)
+    vechical_no = models.CharField(max_length=50, blank=True, null=True)
+    total_igst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_cgst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_sgst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_gst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    notes = models.TextField(blank=True, null=True)
+    flag = models.SmallIntegerField(default=0)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+
+    def __str__(self):
+        return self.transaction_number
+
+    class Meta:
+        managed = True
+        db_table = 'purchase_bill_header'
+        verbose_name_plural = 'purchase_bill_header'
+
+
+class Purchase_Bill_Details(models.Model):
+    purchase_bill_header = models.ForeignKey(Purchase_Bill, on_delete=models.CASCADE, blank=True, null=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
+    quantity = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    hsn_code = models.CharField(max_length=50, blank=True, null=True)
+    uom = models.ForeignKey(
+        Uom, on_delete=models.CASCADE, blank=True, null=True)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    igst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    igst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cgst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cgst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    sgst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    sgst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_with_gst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.purchase_bill_header.transaction_number
+
+    class Meta:
+        managed = True
+        db_table = 'purchase_bill_details'
+        verbose_name_plural = 'purchase_bill_details'
+
+class Item_Stock_Report(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, blank=True, null=True)
+    closing_quantity = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    closing_value = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    start_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
+    next_month_start_date = models.DateField(blank=True, null=True)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return f'Item_Stock_Report: {self.pk}'
+
+    class Meta:
+        managed = True
+        db_table = 'item_stock_report_header'
+        verbose_name_plural = 'item_stock_report_header'
+
+class Item_Stock_Report_Details(models.Model):
+    item_stock_report_header =  models.ForeignKey(Item_Stock_Report, on_delete=models.CASCADE, blank=True, null=True)
+    store_transaction_header = models.ForeignKey(Store_Transaction, on_delete=models.CASCADE, blank=True, null=True) 
+    store_transaction_detail = models.ForeignKey(Store_Transaction_Detail, on_delete=models.CASCADE, blank=True, null=True)
+    transaction_type = models.ForeignKey(Transaction_Type, on_delete=models.CASCADE, blank=True, null=True)
+    transaction_number = models.CharField(max_length=50, blank=True, null=True)
+    transaction_date = models.DateField(blank=True, null=True)
+    quantity = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    value = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        
+        return f'Item_Stock_Report: {self.item_stock_report_header.id}'
+
+    class Meta:
+        managed = True
+        db_table = 'item_stock_report_details'
+        verbose_name_plural = 'item_stock_report_details'
+
+class Outgoing_Incoming_Ratio(models.Model):
+    transaction_number = models.CharField(max_length=50, blank=True, null=True)
+    transaction_date = models.DateField(blank=True, null=True)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    job_order = models.ForeignKey(Job_Order, on_delete=models.CASCADE, blank=True, null=True) 
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.transaction_number
+
+    class Meta:
+        managed = True
+        db_table = 'outgoing_incoming_ratio_header'
+        verbose_name_plural = 'outgoing_incoming_ratio_header'
+
+class Outgoing_Incoming_Ratio_Details(models.Model):
+    outgoing_incoming_ratio_header = models.ForeignKey(Outgoing_Incoming_Ratio, on_delete=models.CASCADE, blank=True, null=True)
+    item_outgoing = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True, related_name="item_outgoing")
+    item_incomming = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True ,related_name="item_incomming")
+    numerator = models.IntegerField(default=0)
+    denominator = models.PositiveIntegerField(default=1)
+    ratio = models.CharField(max_length=50, blank=True, null=True)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.outgoing_incoming_ratio_header.transaction_number
+
+    class Meta:
+        managed = True
+        db_table = 'outgoing_incoming_ratio_details'
+        verbose_name_plural = 'outgoing_incoming_ratio_details'
+
+class Test_Corn_Job(models.Model):
+    test_message =  models.CharField(max_length=10, blank=True, null=True)
+   
+    created_at = models.DateTimeField(default=now)
+    
+    def __str__(self):
+        return self.test_message
+
+    class Meta:
+        managed = True
+        db_table = 'test_corn_job'
+        verbose_name_plural = 'test_corn_job'
+
