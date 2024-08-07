@@ -4,3 +4,8 @@ sec/.env
 */__pycache__/
 */migrations/
 manage.py
+sec/__init__.py
+sec/settings.py
+staticfiles/
+.httaccess
+passenger_wsgi.py
