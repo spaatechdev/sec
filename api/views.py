@@ -5261,8 +5261,8 @@ def materialIssueAdd(request):
             models.Store_Item.objects.bulk_create(store_items_add)
 
         transaction.commit()
-        print('5263')
-        send_custom_email('Material Issue Created Successfully.')
+        # print('5263')
+        # send_custom_email('Material Issue Created Successfully.')
         context.update({
             'status': 200,
             'message': "Material Issue Created Successfully."
