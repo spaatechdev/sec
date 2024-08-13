@@ -31,6 +31,7 @@ from django.db.models import Avg, Count, Min, Sum
 from fractions import Fraction
 import pandas as pd
 from django.contrib.auth.models import Permission
+from django.core.mail import EmailMessage
 
 
 env = environ.Env()
@@ -69,6 +70,29 @@ def set_user_permissions_in_session(user, request):
     else:
         # If no role is assigned, the user has no permissions
         request.session['role_permissions'] = []
+
+
+def send_custom_email(subject):
+    print("Entering send custom function")
+
+    # Static email body content
+    body = 'test'
+    recipient_email = 'saswatad@spaatech.com'  # Hardcoded recipient email
+
+    # Create the email message
+    email = EmailMessage(
+        subject=subject,
+        body=body,
+        from_email=env("DEFAULT_FROM_EMAIL"),
+        to=[recipient_email]
+    )
+    
+    try:
+        email.send()
+        print('Email has been sent.')
+    except Exception as e:
+        print('Failed to send email!')
+        print(f'Error: {str(e)}')
 
 
 @api_view(['POST'])
@@ -5033,7 +5057,8 @@ def materialIssueAdd(request):
 
     try:
         with transaction.atomic():
-
+            # send_custom_email('Material Issue Created Successfully.')
+            # exit()
             
             # print('4469')
             # transation_type = models.Transaction_Type.objects.get(name = 'MIS')
@@ -5058,7 +5083,7 @@ def materialIssueAdd(request):
             storeTransactionHeader=models.Store_Transaction()
             if request.POST['vendor_id']:
                 vendor_store=models.Store.objects.get(vendor_id=request.POST['vendor_id'])
-                # print('4649')
+                print('4649')
                 storeTransactionHeader.vendor_id = request.POST['vendor_id']
             
             # print(models.Transaction_Type.objects.get(name = 'MIS'))
@@ -5077,7 +5102,7 @@ def materialIssueAdd(request):
                 storeTransactionHeader.vehicle = request.POST['vehicle']
             storeTransactionHeader.save()
             
-            # print('4666')
+            print('4666')
 
             #material issue issued for job order
             jobOrderEdits = models.Job_Order.objects.get(pk = request.POST['job_order_id'])
@@ -5230,13 +5255,14 @@ def materialIssueAdd(request):
                 store_item.save()
 
                 
-              
+            print('5257')
             models.Store_Transaction_Detail.objects.bulk_create(store_transaction_details)
             models.Store_Transaction_Detail.objects.bulk_create(outgoing_incomming_details)
             models.Store_Item.objects.bulk_create(store_items_add)
 
         transaction.commit()
-
+        print('5263')
+        send_custom_email('Material Issue Created Successfully.')
         context.update({
             'status': 200,
             'message': "Material Issue Created Successfully."
