@@ -26,6 +26,7 @@
                 </div>
             </div>
         </div>
+
     </div>
     <!--/ Breadcrumb End -->
     <!--================================-->
@@ -38,6 +39,12 @@
         </label>
         <input type="text" id="search" name="search" style="width: 180px; height: 30px;" value="{{request.GET.keyword}}"
             placeholder="" />
+    </div>
+    <div class="col-md-6">
+        <div class="float-end d-flex justify-content-end" style="padding-top: 10px;">
+            <button type="button" file_type="pdf" class="mr-3 btn btn-info btn-sm generate_and_download" style="padding: 4.8px 12.8px 4.8px 12.8px;">PDF</button>
+            <button type="button" file_type="xlsx" class="mr-3 btn btn-info btn-sm generate_and_download" style="padding: 4.8px 12.8px 4.8px 12.8px;">Excel</button>
+        </div>
     </div>
     <!--/ Search box End -->
     <!--================================-->
@@ -98,7 +105,9 @@
                                     <th>Job Order Number</th>
                                     <th>Job Order Date</th>
                                     <th>Manufacturing type</th>
+                                    <th>Estimated Time</th>
                                     <th>Job Description</th>
+                                    <th>Job Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -110,6 +119,42 @@
                         <ul id="pagination" class="pagination justify-content-center">
                         </ul>
                     </nav>
+                    <!-- Modal Structure for Material In View -->
+                    <div class="modal fade" id="materialInModal" tabindex="-1" aria-labelledby="materialInModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="materialInModalLabel">Actual Time Taken To complete</h5>
+                                </div>
+                                <form id="create_form" class="needs-validation" novalidate enctype="multipart/form-data">                    
+                                    <div class="modal-body">
+                                        <div class="card-body pd-5">
+                                            
+                                            <div class="form-row">
+                                                <input type="hidden" 
+                                                name="pk" min="0.0" class="form-control pk" 
+                                                required>
+                                                <div class="col-md-5 py-2">
+                                                    <label>Store<span class="required-indicator">*</span></label>
+                                                    <div class="input-group">
+                                                        <select class="custom-select selectpicker store_id" name="store_id" data-placeholder="Select store" required>
+                                                            
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-success submit-btn" type="submit">Submit</button>
+                                        <button type="button" class="btn btn-secondary" id="close" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- modal end here -->
                 </div>
             </div>
         </div>
@@ -119,6 +164,30 @@
 {% endblock %}
 
 {% block js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+<script>
+    // Example starter JavaScript for disabling form submissions if there are invalid fields
+    (function () {
+        'use strict';
+        window.addEventListener('load', function () {
+            // Fetch all the forms we want to apply custom Bootstrap validation styles to
+            var forms = document.getElementsByClassName('needs-validation');
+            // Loop over them and prevent submission
+            var validation = Array.prototype.filter.call(forms, function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
 <script>
     keyword = new URLSearchParams(window.location.search).get('keyword') != null ? new URLSearchParams(window.location.search).get('keyword') : ''
     function getJobOrderList(keyword) {
@@ -133,14 +202,15 @@
                 $('.error-msg-txt').text("");
                 if (response.status == 200) {
                     edit_url = "{% url 'superuser:jobOrderEdit' 1 %}";
+                    view_url = "{% url 'superuser:jobOrderView' 1 %}";
+                    copy_url = "{% url 'superuser:jobOrderAdd'  %}?id=";
                     page_items = response.page_items;
                     tbody_text = ``;
                     for (let index = 0; index < page_items.length; index++) {
                         const element = page_items[index];
                         tbody_buttom_text =``
                         console.log(element.material_issue);
-                        if(element.material_issue != 0){
-                            console.log('142');
+                        if(element.material_issue == 1){
                             tbody_buttom_text = `<td>
                                 {% if request.user.is_superuser == 1 or 'change_job_order'|get_session_permission:request is not None %}
                                 <a href="#" onclick="return alert('cannot edit  as material already get issued on this job order')" class="table-action mg-r-10 "> <i class="fa fa-pencil"></i> </a>    
@@ -148,6 +218,43 @@
                                 {% if request.user.is_superuser == 1 or 'delete_job_order'|get_session_permission:request is not None %}
                                 <a href="#" onclick="return alert('cannot  delete as material already  get issued on this job order')" class="table-action mg-r-10 "> <i class="fa fa-trash"></i> </a>
                                 {% endif %}
+                                {% if request.user.is_superuser == 1 or 'view_job_order'|get_session_permission:request is not None %}
+                                <a href="${view_url.replace('1', element.pk)}" class="table-action mg-r-10"> <i class="fa fa-eye"></i> </a>    
+                                {% endif %}
+                                {% if request.user.is_superuser == 1 or 'add_job_order'|get_session_permission:request is not None %}
+                                <a href="${copy_url + element.pk}" class="table-action mg-r-10"> <i class="fa fa-copy"></i> </a>
+                                {% endif %}
+                                ${element.manufacturing_type == 'Self' ?  `{% if request.user.is_superuser == 1 or 'view_store_transaction'|get_session_permission:request is not None %}
+                                <a href="javascript:void(0);" class="table-action mg-r-10" 
+                                    onclick="return alert('all material issue is not complete')"> 
+                                    <i class="fa fa-stop"></i>
+                                    </a>
+                                {% endif %}` : ''}
+                                </td>`
+                        }
+                        else if(element.material_issue == 2 && element.material_reciept == 0 ){
+                            console.log('230');
+                            
+                            tbody_buttom_text = `<td>
+                                {% if request.user.is_superuser == 1 or 'change_job_order'|get_session_permission:request is not None %}
+                                <a href="#" onclick="return alert('cannot edit  as material already get issued on this job order')" class="table-action mg-r-10 "> <i class="fa fa-pencil"></i> </a>    
+                                {% endif %}
+                                {% if request.user.is_superuser == 1 or 'delete_job_order'|get_session_permission:request is not None %}
+                                <a href="#" onclick="return alert('cannot  delete as material already  get issued on this job order')" class="table-action mg-r-10 "> <i class="fa fa-trash"></i> </a>
+                                {% endif %}
+                                {% if request.user.is_superuser == 1 or 'view_job_order'|get_session_permission:request is not None %}
+                                <a href="${view_url.replace('1', element.pk)}" class="table-action mg-r-10"> <i class="fa fa-eye"></i> </a>    
+                                {% endif %}
+                                {% if request.user.is_superuser == 1 or 'add_job_order'|get_session_permission:request is not None %}
+                                <a href="${copy_url + element.pk}" class="table-action mg-r-10"> <i class="fa fa-copy"></i> </a>
+                                {% endif %}
+                                ${element.manufacturing_type == 'Self' ? `{% if request.user.is_superuser == 1 or 'view_store_transaction'|get_session_permission:request is not None %}
+                                    <a href="javascript:void(0);" class="table-action mg-r-10" 
+                                        onclick="if(confirm('Are you sure you want to complete this job order?')) { loadMaterialInData(${ element.pk }) }"> 
+                                        <i class="fa fa-stop"></i>
+                                        </a>
+                                    {% endif %}` : ''}
+                                
                                 </td>`
                         }
                         else{
@@ -159,6 +266,12 @@
                                     {% if request.user.is_superuser == 1 or 'delete_job_order'|get_session_permission:request is not None %}
                                     <a id="delete-btn" data-id="${element.pk}" data-name="${element.order_number}" href="javascript:void(0)" class="table-action mg-r-10"> <i class="fa fa-trash"></i> </a>
                                     {% endif %}
+                                    {% if request.user.is_superuser == 1 or 'view_job_order'|get_session_permission:request is not None %}
+                                    <a href="${view_url.replace('1', element.pk)}" class="table-action mg-r-10"> <i class="fa fa-eye"></i> </a>    
+                                    {% endif %}
+                                    {% if request.user.is_superuser == 1 or 'add_job_order'|get_session_permission:request is not None %}
+                                    <a href="${copy_url + element.pk}" class="table-action mg-r-10"> <i class="fa fa-copy"></i> </a>
+                                    {% endif %}
                                     </td>`
                         }
                         tbody_text += `<tr>
@@ -166,7 +279,11 @@
                                 <td>${element.order_number}</td>
                                 <td>${element.order_date}</td>
                                 <td>${element.manufacturing_type} manufacturing</td>
-                                <td>${element.notes}</td> `+ tbody_buttom_text+`</tr>`;
+                                <td>${element.estimated_time_day}</td>
+                                <td>${element.notes}</td> 
+                                 <td style="color: ${element.job_status == 0 ? 'blue' : (element.job_status == 1 ? 'lime' : 'red')}; ">
+                                    ${element.job_status == 0 ? 'Open' : (element.job_status == 1 ? 'WIP' : 'Closed')}
+                                </td>`+ tbody_buttom_text+`</tr>`;
                     }
                     // pagination_text = ``;
                     // if (response.total_pages > 1) {
@@ -189,15 +306,124 @@
         });
 
     }
+
+    function hrCalculate(time_day){
+        var timeString = time_day;
+            
+            // Regular expression to extract the suffix (non-digit part)
+            var suffix = timeString.match(/[a-zA-Z]+/);
+
+            // Log the extracted suffix
+            return suffix ? suffix[0] : null;
+    }
+
+    
+
     $(document).ready(function () {
         getJobOrderList(keyword)
+        $('.selectpicker').select2({
+            placeholder: '',
+            templateResult: function(option) {
+                if(option.element && (option.element).hasAttribute('hidden')){
+                    return null;
+                }
+                return option.text;
+            }
+        });
         
     });
+
+    function loadMaterialInData(id) {
+        console.log(id);
+        $('.pk').val(id)
+        let store_option_text =``
+        $.ajax({
+                type: "GET",
+                url: "{% url 'api:storeList' %}?store_type=InHouse" ,
+                data: {},
+                headers: {
+                    'Authorization': getCookieValue("accessToken")
+                },
+                success: function (response) {
+                    if (response.status == 200) {
+                        store_option_text = `<option value="">Choose...</option>`;
+                        for (let index = 0; index < response.page_items.length; index++) {
+                            store_option_text += `<option value="${response.page_items[index].pk}">${response.page_items[index].name}</option>`;
+                        }
+                        $('.store_id').html(store_option_text)
+                        $('.selectpicker').select2({
+                            placeholder: '',
+                            templateResult: function(option) {
+                                if(option.element && (option.element).hasAttribute('hidden')){
+                                    return null;
+                                }
+                                return option.text;
+                            }
+                        });
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (error) {
+                    $('.error-msg-txt').text(error.responseJSON != null ? error.responseJSON.detail : error.statusText);
+                }
+            });
+        
+        $('#materialInModal').modal('show');
+
+        getJobOrderList(keyword)
+    }
+     
+    $(document).on('click','#close',function(){
+        $('#materialInModal').modal('hide');
+    })
 
     $(document).on('keyup', '#search', function () {
         keyword = $(this).val();
         getJobOrderList(keyword)
     })
+
+    $(document).on('submit','#create_form', function(e) {
+        // Collect the data from the modal input fields
+        console.log('305');
+        
+        e.preventDefault();
+        $('.submit-btn').text('Submitting...');
+        $('.submit-btn').prop('disabled', true);
+        var formData = new FormData(this);
+
+        $.ajax({
+                type: "POST",
+                evalScripts: true,
+                contentType: false,
+                processData: false,
+                url: "{% url 'api:jobOrderTimeComplete' %}",
+                data: formData,
+                headers: {
+                    'Authorization': getCookieValue("accessToken")
+                },
+                success: function (response) {
+                    $('.submit-btn').text('Submitting...');
+                    $('.submit-btn').prop('disabled', false);
+                    if (response.status == 200) {
+                        locationAfterMessageStore(response.message, 'success', "{% url 'superuser:jobOrderList' %}");
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (error) {
+                    $('.submit-btn').text('Submitting...');
+                    $('.submit-btn').prop('disabled', false);
+                    // locationAfterMessageStore(error.responseJSON.detail, 'error');
+                    $('.success-msg-txt').text("");
+                    $('.error-msg-txt').removeClass('text-secondary').removeClass('text-info').removeClass('text-success').removeClass('text-warning').removeClass('text-danger');
+                    $('.error-msg-txt').addClass('text-danger');
+                    $('.error-msg-txt').text(error.responseJSON != null ? error.responseJSON.detail : error.statusText);
+                }
+            });
+        });
+        
+
 
     $(document).on('click', '#delete-btn', function () {
         id = $(this).attr('data-id');
@@ -226,6 +452,82 @@
             });
         }
     });
+
+    $(document).on('click', '.generate_and_download', function (e) {
+    e.preventDefault();
+
+    var fileType = $(this).attr('file_type');
+    var filename = `JobOrderList_${new Date().toISOString().slice(0, 10)}`;
+    var table = $('.table');
+
+    try {
+        if (fileType === 'xlsx') {
+            var wb = XLSX.utils.book_new();
+            var ws_data = [];
+
+            // Add table headers
+            var headerRow = [];
+            table.find('thead th').each(function () {
+                headerRow.push($(this).text().trim());
+            });
+            ws_data.push(headerRow);
+
+            // Add table body rows
+            table.find('tbody tr').each(function () {
+                var row_data = [];
+                $(this).find('td').each(function () {
+                    row_data.push($(this).text().trim());
+                });
+                ws_data.push(row_data);
+            });
+
+            // Generate worksheet and download Excel file
+            var ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, "JobOrders");
+            XLSX.writeFile(wb, `${filename}.xlsx`);
+            alert('Excel file downloaded successfully!');
+        }
+        else if (fileType === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            var doc = new jsPDF();
+
+            // Extract headers
+            var headers = [];
+            table.find('thead th').each(function () {
+                headers.push($(this).text().trim());
+            });
+
+            // Extract table rows
+            var data = [];
+            table.find('tbody tr').each(function () {
+                var row = [];
+                $(this).find('td').each(function () {
+                    row.push($(this).text().trim());
+                });
+                data.push(row);
+            });
+
+            // Generate PDF table with header, body
+            doc.autoTable({
+                head: [headers],
+                body: data,
+                startY: 20, // Start table below the header text
+                margin: { top: 10 },
+                styles: { fontSize: 10 },
+                columnStyles: {
+                    0: { cellWidth: 'auto' },
+                    // Add other column widths if necessary
+                }
+            });
+
+            doc.save(`${filename}.pdf`);
+            alert('PDF file downloaded successfully!');
+        }
+    } catch (error) {
+        console.error('Error generating the file:', error);
+        alert('An error occurred while generating the file.');
+    }
+});
 
     
 </script>

@@ -11,6 +11,7 @@ import json
 import os
 from sec import settings
 from num2words import num2words
+from datetime import datetime, timedelta
 env = environ.Env()
 environ.Env.read_env()
 
@@ -24,60 +25,149 @@ context['client_gst_number'] = env("CLIENT_GST_NUMBER")
 
 # Create your views here.
 
+# -----old getajaxFrom Type------
+
+# def getAjaxFormType(request):
+#     if request.method == "POST":
+#         print(request.POST,'123')
+#         form_type = request.POST['form_type']
+#         selector = request.POST['selector']
+#         if form_type == "addItemCategory":
+#             context.update({'request': request, 'selector': selector})
+#             return JsonResponse({
+#                 'status': 200,
+#                 'formType': render_to_string('ajaxFormType/addItemCategory.html', context)
+#             })
+#         elif form_type == "addItemType":
+#             itemCategories = models.Item_Category.objects.filter(
+#                 status=1, deleted=0)
+#             context.update(
+#                 {'request': request, 'selector': selector, 'itemCategories': itemCategories})
+#             return JsonResponse({
+#                 'status': 200,
+#                 'formType': render_to_string('ajaxFormType/addItemType.html', context)
+#             })
+#         elif form_type == "addItemColor":
+#             context.update({'request': request, 'selector': selector})
+#             return JsonResponse({
+#                 'status': 200,
+#                 'formType': render_to_string('ajaxFormType/addItemColor.html', context)
+#             })
+#         elif form_type == "addUom":
+#             context.update({'request': request, 'selector': selector})
+#             return JsonResponse({
+#                 'status': 200,
+#                 'formType': render_to_string('ajaxFormType/addUom.html', context)
+#             })
+#         elif form_type == "addStore":
+#             context.update({'request': request, 'selector': selector})
+#             return JsonResponse({
+#                 'status': 200,
+#                 'formType': render_to_string('ajaxFormType/addStore.html', context)
+#             })
+#         elif form_type == "addItem":
+#             itemTypes = models.Item_Type.objects.filter(status=1, deleted=0)
+#             uoms = models.Uom.objects.filter(status=1, deleted=0)
+#             context.update({'request': request, 'selector': selector,
+#                            'itemTypes': itemTypes, 'uoms': uoms})
+#             return JsonResponse({
+#                 'status': 200,
+#                 'formType': render_to_string('ajaxFormType/addItem.html', context)
+# #             })
+#         elif form_type == "addVendor":
+#                 countries = models.Country.objects.all()
+#                 context.update({'request': request, 'selector': selector, 'countries': countries})
+#                 return JsonResponse({
+#                     'status': 200,
+#                     'formType': render_to_string('ajaxFormType/addVendor.html', context)
+#                 })
+#     else:
+#         return JsonResponse({
+#             'status': 500,
+#             'message': "There should be ajax method"
+#         })
+
+
+# -----new getajaxFrom Type------
 
 def getAjaxFormType(request):
     if request.method == "POST":
-        print(request.POST,'123')
-        form_type = request.POST['form_type']
-        selector = request.POST['selector']
-        if form_type == "addItemCategory":
-            context.update({'request': request, 'selector': selector})
-            return JsonResponse({
-                'status': 200,
-                'formType': render_to_string('ajaxFormType/addItemCategory.html', context)
-            })
-        elif form_type == "addItemType":
-            itemCategories = models.Item_Category.objects.filter(
-                status=1, deleted=0)
-            context.update(
-                {'request': request, 'selector': selector, 'itemCategories': itemCategories})
-            return JsonResponse({
-                'status': 200,
-                'formType': render_to_string('ajaxFormType/addItemType.html', context)
-            })
-        elif form_type == "addItemColor":
-            context.update({'request': request, 'selector': selector})
-            return JsonResponse({
-                'status': 200,
-                'formType': render_to_string('ajaxFormType/addItemColor.html', context)
-            })
-        elif form_type == "addUom":
-            context.update({'request': request, 'selector': selector})
-            return JsonResponse({
-                'status': 200,
-                'formType': render_to_string('ajaxFormType/addUom.html', context)
-            })
-        elif form_type == "addStore":
-            context.update({'request': request, 'selector': selector})
-            return JsonResponse({
-                'status': 200,
-                'formType': render_to_string('ajaxFormType/addStore.html', context)
-            })
-        elif form_type == "addItem":
-            itemTypes = models.Item_Type.objects.filter(status=1, deleted=0)
-            uoms = models.Uom.objects.filter(status=1, deleted=0)
-            context.update({'request': request, 'selector': selector,
-                           'itemTypes': itemTypes, 'uoms': uoms})
-            return JsonResponse({
-                'status': 200,
-                'formType': render_to_string('ajaxFormType/addItem.html', context)
-            })
+        form_type = request.POST.get('form_type')
+        selector = request.POST.get('selector')
+        data_id = request.POST.get('data-id', None)  # Use .get to avoid KeyError if data-id is missing
+
+        context = {}  # Ensure context is initialized before using it
+
+        try:
+            if form_type == "addItemCategory":
+                context.update({'request': request, 'selector': selector})
+                return JsonResponse({
+                    'status': 200,
+                    'formType': render_to_string('ajaxFormType/addItemCategory.html', context)
+                })
+            elif form_type == "addItemType":
+                itemCategories = models.Item_Category.objects.filter(status=1, deleted=0)
+                context.update({'request': request, 'selector': selector, 'itemCategories': itemCategories})
+                return JsonResponse({
+                    'status': 200,
+                    'formType': render_to_string('ajaxFormType/addItemType.html', context)
+                })
+            elif form_type == "addItemColor":
+                context.update({'request': request, 'selector': selector})
+                return JsonResponse({
+                    'status': 200,
+                    'formType': render_to_string('ajaxFormType/addItemColor.html', context)
+                })
+            elif form_type == "addUom":
+                context.update({'request': request, 'selector': selector})
+                return JsonResponse({
+                    'status': 200,
+                    'formType': render_to_string('ajaxFormType/addUom.html', context)
+                })
+            elif form_type == "addStore":
+                context.update({'request': request, 'selector': selector})
+                return JsonResponse({
+                    'status': 200,
+                    'formType': render_to_string('ajaxFormType/addStore.html', context)
+                })
+            elif form_type == "addItem":
+                itemTypes = models.Item_Type.objects.filter(status=1, deleted=0)
+                uoms = models.Uom.objects.filter(status=1, deleted=0)
+                context.update({'request': request, 'selector': selector, 'itemTypes': itemTypes, 'uoms': uoms})
+                return JsonResponse({
+                    'status': 200,
+                    'formType': render_to_string('ajaxFormType/addItem.html', context)
+                })
+            elif form_type == "addVendor":
+                countries = models.Country.objects.all()
+                context.update({'request': request, 'selector': selector, 'countries': countries})
+                return JsonResponse({
+                    'status': 200,
+                    'formType': render_to_string('ajaxFormType/addVendor.html', context)
+                })
+            elif form_type == "addVechile":
+                data_id = request.POST.get('data-id', None)  # Ensure the correct retrieval of data-id                
+                if data_id:
+                    try:
+                        purchaseBill = models.Purchase_Bill.objects.get(pk=data_id)
+                        context.update({'request': request, 'selector': selector, 'purchaseBill': purchaseBill})
+                        return JsonResponse({
+                            'status': 200,
+                            'formType': render_to_string('ajaxFormType/updateVechicleMOut.html', context)
+                        })
+                    except models.Purchase_Bill.DoesNotExist:
+                        return JsonResponse({'status': 404, 'message': "Purchase Bill not found."})
+                else:
+                    return JsonResponse({'status': 400, 'message': "Data ID is missing."})
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return JsonResponse({'status': 500, 'message': "An unexpected error occurred."})
     else:
         return JsonResponse({
             'status': 500,
             'message': "There should be ajax method"
         })
-
 
 @login_required
 def dashboard(request):
@@ -100,7 +190,7 @@ def roleList(request):
 @login_required
 def roleAdd(request):
     content_types = ContentType.objects.prefetch_related('permission_set').filter(
-        app_label='api').exclude(model__in=['user', 'role', 'role_permission', 'country', 'state', 'city', 'customer_type', 'kyc_type', 'child_uom', 'bill_of_material_detail', 'purchase_order_detail', 'transaction_type', 'store_transaction_detail'])
+        app_label='api').exclude(model__in=['user', 'role', 'role_permission', 'country', 'state', 'city', 'customer_type', 'kyc_type', 'child_uom', 'bill_of_material_detail', 'purchase_order_detail', 'transaction_type', 'store_transaction_detail','test_corn_job','user_log_details','outgoing_incoming_ratio','outgoing_incoming_ratio_details','purchase_bill_details','grn_inspection_transaction_detail','physical_inspection_details','on_transit_transaction_details','item_stock_report_details','invoice_details','job_order_detail','job_order_detail_sent'])
     context.update({
         'content_types': content_types,
         'page_title': "Role Add",
@@ -112,7 +202,7 @@ def roleAdd(request):
 @login_required
 def roleEdit(request, id):
     content_types = ContentType.objects.prefetch_related('permission_set').filter(
-        app_label='api').exclude(model__in=['user', 'role', 'role_permission', 'country', 'state', 'city', 'customer_type', 'kyc_type', 'child_uom', 'bill_of_material_detail', 'purchase_order_detail', 'transaction_type', 'store_transaction_detail'])
+        app_label='api').exclude(model__in=['user', 'role', 'role_permission', 'country', 'state', 'city', 'customer_type', 'kyc_type', 'child_uom', 'bill_of_material_detail', 'purchase_order_detail', 'transaction_type', 'store_transaction_detail','test_corn_job','user_log_details','outgoing_incoming_ratio','outgoing_incoming_ratio_details','purchase_bill_details','grn_inspection_transaction_detail','physical_inspection_details','on_transit_transaction_details','item_stock_report_details','invoice_details','job_order_detail','job_order_detail_sent'])
     role = models.Role.objects.prefetch_related(
         'role_permission_set').get(pk=id)
     selected_permissions = []
@@ -132,7 +222,7 @@ def roleEdit(request, id):
 @login_required
 def roleView(request, id):
     content_types = ContentType.objects.prefetch_related('permission_set').filter(
-        app_label='api').exclude(model__in=['user', 'role', 'role_permission', 'country', 'state', 'city', 'customer_type', 'kyc_type', 'child_uom', 'bill_of_material_detail', 'purchase_order_detail', 'transaction_type', 'store_transaction_detail'])
+        app_label='api').exclude(model__in=['user', 'role', 'role_permission', 'country', 'state', 'city', 'customer_type', 'kyc_type', 'child_uom', 'bill_of_material_detail', 'purchase_order_detail', 'transaction_type', 'store_transaction_detail','test_corn_job','user_log_details','outgoing_incoming_ratio','outgoing_incoming_ratio_details','purchase_bill_details','grn_inspection_transaction_detail','physical_inspection_details','on_transit_transaction_details','item_stock_report_details','invoice_details','job_order_detail','job_order_detail_sent'])
     role = models.Role.objects.prefetch_related(
         'role_permission_set').get(pk=id)
     selected_permissions = []
@@ -209,6 +299,13 @@ def userEdit(request, id):
     })
     return render(request, 'portal/User/edit.html', context)
 
+@login_required
+def userTransactionLog(request):
+    context.update({       
+        'page_title': "User Transaction Log",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "User Transaction Log", 'url': reverse('superuser:userTransactionLog')}, {'name': "List"}]
+    })
+    return render(request, 'portal/User Transaction log/list.html', context)
 
 @login_required
 def vendorList(request):
@@ -232,10 +329,16 @@ def vendorAdd(request):
 
 @login_required
 def vendorEdit(request, id):
+    context ={}
     vendor = models.Vendor.objects.get(pk=id)
     countries = models.Country.objects.all()
     states = models.State.objects.filter(country_id=vendor.country_id)
     cities = models.City.objects.filter(state_id=vendor.state_id)
+    if vendor.store_present == 1 :
+        store = models.Store.objects.get(vendor_id = id)
+        context.update({
+            'store_manager': store.manager_name	,
+        })
     context.update({
         'vendor': vendor,
         'countries': countries,
@@ -514,8 +617,10 @@ def storeList(request):
 @login_required
 def storeAdd(request):
     vendors = models.Vendor.objects.all().exclude(id__in=list(models.Store.objects.filter(vendor_id__isnull=False).values_list("vendor_id", flat="True")))
+    countries = models.Country.objects.all()
     context.update({
         'vendors':vendors,
+        'countries': countries,
         'page_title': "Store Add",
         'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Store", 'url': reverse('superuser:storeList')}, {'name': "Add"}]
     })
@@ -642,11 +747,27 @@ def purchaseOrderList(request):
 
 @login_required
 def purchaseOrderAdd(request):
-    context.update({
-        'page_title': "Purchase Order Add",
-        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Purchase Order", 'url': reverse('superuser:purchaseOrderList')}, {'name': "Add"}]
-    })
-    return render(request, 'portal/Purchase Order/add.html', context)
+
+    if request.GET.get('id', None):
+        id = request.GET.get('id', None)
+        purchaseOrder = models.Purchase_Order.objects.prefetch_related('purchase_order_detail_set').get(pk=id)
+        vendors = models.Vendor.objects.filter(status=1, deleted=0)
+        items = models.Item.objects.filter(status=1, deleted=0)
+        context.update({
+            'purchaseOrder': purchaseOrder,
+            'vendors': vendors,
+            'items': items,
+            'page_title': "Purchase Order Add",
+            'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Purchase Order", 'url': reverse('superuser:purchaseOrderList')}, {'name': "Add"}]
+        })
+        return render(request, 'portal/Purchase Order/edit.html', context)
+    else:
+
+        context.update({
+            'page_title': "Purchase Order Add",
+            'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Purchase Order", 'url': reverse('superuser:purchaseOrderList')}, {'name': "Add"}]
+        })
+        return render(request, 'portal/Purchase Order/add.html', context)
 
 
 @login_required
@@ -680,13 +801,16 @@ def purchaseOrderView(request, id):
 
 @login_required
 def purchaseOrderPrint(request, id):
+    configList = models.Configuration_User.objects.first()
+    
     purchaseOrder = models.Purchase_Order.objects.prefetch_related(
         'purchase_order_detail_set').get(pk=id)
     purchaseOrder.amount_with_gst = purchaseOrder.total_amount + \
         purchaseOrder.discounted_value
     context.update({
         'page_title': "Purchase Order Print",
-        'purchaseOrder': purchaseOrder
+        'purchaseOrder': purchaseOrder,
+        'config': configList
     })
     return render(request, 'portal/Purchase Order/print.html', context)
 
@@ -754,9 +878,6 @@ def storeItemEdit(request, id):
     return render(request, 'portal/Store Item/edit.html', context)
 
 
-
-
-
 @login_required
 def storeTransactionList(request):
     context.update({
@@ -768,6 +889,7 @@ def storeTransactionList(request):
 
 @login_required
 def storeTransactionAdd(request):
+    
     context.update({
         'transaction_type': "2",
         'page_title': "Material Receipt Add",
@@ -836,21 +958,64 @@ def jobOrderAdd(request):
     # for bom in models.Bill_Of_Material.objects.all():
     #     item_id_n_bom_id[str(bom.bom_item_id)]=bom.id
     # bom_items_id_list = list(models.Bill_Of_Material.objects.all().values_list('bom_item_id', flat=True))
+   
+    if request.GET.get('id', None):
+        id = request.GET.get('id', None)
+        print(id)
+        jobOrder = models.Job_Order.objects.prefetch_related('job_order_detail_set').get(pk=id)
+        jobOrderCount = models.Job_Order.objects.filter(manufacturing_type=jobOrder.manufacturing_type).count()
+        vendorShort = 'SLF' if jobOrder.manufacturing_type == 'Self' else 'TPM'
+        jobOrderNumber =  env("JOB_ORDER_NUMBER_SEQ").replace("${VENDOR_SHORT}", vendorShort).replace(
+                "${AI_DIGIT_3}", str(jobOrderCount + 1).zfill(3)).replace("${FINANCE_YEAR}", datetime.today().strftime('%y') + "-" + (datetime(datetime.today().year + 1, 1, 1).strftime('%y')))
+        jobOrder.order_number =jobOrderNumber
+        print(jobOrder.order_number)
+        stores = models.Store.objects.filter(status=1, deleted=0)
+        vendors = models.Vendor.objects.filter(status=1, deleted=0)
+        items = models.Item.objects.filter(status=1, deleted=0)
 
-    context.update({
-        # 'item_id_n_bom_id':json.dumps(item_id_n_bom_id),
-        'page_title': "Job Order Add",
-        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Job Order", 'url': reverse('superuser:jobOrderList')}, {'name': "Add"}]
-    })
-    return render(request, 'portal/Job Order/add.html', context)
+        outgoing_details = jobOrder.job_order_detail_set.filter(direction='outgoing')
+        incoming_details = jobOrder.job_order_detail_set.filter(direction='incoming')
 
+        context.update({
+            'jobOrder': jobOrder,
+            'items': items,
+            'vendors': vendors,
+            'outgoing_details': outgoing_details,
+            'incoming_details': incoming_details,
+            'page_title': "Job Order Add",
+            'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Job Order", 'url': reverse('superuser:jobOrderList')}, {'name': "Add"}]
+        })
+        return render(request, 'portal/Job Order/edit.html', context)
 
+    else:
+        context.update({
+            'page_title': "Job Order Add",
+            'breadcrumbs': [
+                {
+                    'name': "Dashboard", 
+                    'url': reverse('superuser:dashboard')
+                }, 
+                {
+                    'name': "Job Order", 
+                    'url': reverse('superuser:jobOrderList')
+                }, 
+                {
+                    'name': "Add"
+                }
+            ]
+        })
+        return render(request, 'portal/Job Order/add.html', context)
+
+        
+
+@login_required
 def jobOrderEdit(request, id):
     jobOrder = models.Job_Order.objects.prefetch_related('job_order_detail_set').get(pk=id)
     stores = models.Store.objects.filter(status=1, deleted=0)
     vendors = models.Vendor.objects.filter(status=1, deleted=0)
     items = models.Item.objects.filter(status=1, deleted=0)
-
+    time_unit = ''.join(filter(str.isalpha, jobOrder.estimated_time_day))
+    time_value = ''.join(filter(str.isdigit, jobOrder.estimated_time_day))
     outgoing_details = jobOrder.job_order_detail_set.filter(direction='outgoing')
     incoming_details = jobOrder.job_order_detail_set.filter(direction='incoming')
 
@@ -858,6 +1023,8 @@ def jobOrderEdit(request, id):
         'jobOrder': jobOrder,
         'items': items,
         'vendors': vendors,
+        'time_unit':time_unit,
+        'time_value':time_value,
         'outgoing_details': outgoing_details,
         'incoming_details': incoming_details,
         'page_title': "Job Order Edit",
@@ -870,16 +1037,17 @@ def jobOrderEdit(request, id):
     return render(request, 'portal/Job Order/edit.html', context)
 
 
-# @login_required
-# def jobOrderView(request, id):
-#     jobOrder = models.Job_Order.objects.prefetch_related('job_order_detail_set').get(pk=id)
-#     context.update({
-#         'purchaseOrder': jobOrder,
-#         'page_title': "Job Order View",
-#         'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Job Order", 'url': reverse('superuser:jobOrderList')}, {'name': "View"}]
-#     })
-#     return render(request, 'portal/Job Order/view.html', context)
-#
+@login_required
+def jobOrderView(request, id):
+    jobOrder = models.Job_Order.objects.prefetch_related('job_order_detail_set').get(pk=id)
+    print(jobOrder.job_order_detail_set.all())
+    context.update({
+        'jobOrder': jobOrder,
+        'page_title': "Job Order View",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Job Order", 'url': reverse('superuser:jobOrderList')}, {'name': "View"}]
+    })
+    return render(request, 'portal/Job Order/view.html', context)
+
 #--- developed by saswata
 
 
@@ -942,9 +1110,6 @@ def materialIssuePrint(request, id):
     'store__pin'))
     
     materialIssueNumToword = num2words(float(materialIssue.total_amount))
-    print(materialIssueNumToword)
-    # print(materialIssuestores[0])
-
     context.update({
         'page_title': "Delivery Challan",
         'materialIssue': materialIssue,
@@ -1015,7 +1180,7 @@ def grnInspectionView(request,id):
     # 'transaction_number',
     # 'purchase_order_header__order_number',
     # ))
-    # print(grn_inspection_head)
+
     # grn_inspection_det = list(models.Grn_Inspection_Transaction_Detail.objects.filter(grn_inspection_transaction_header_id=id , ins_done =1).values('pk',
     # 'item__name',
     # 'store__name',
@@ -1098,7 +1263,6 @@ def materialOutList(request):
 @login_required
 def materialOutAdd(request):
     stores = list(models.Store.objects.filter(status= 1,deleted=0).values('pk' ,'name','vendor_id','vendor__name'))
-    # print(stores)
     context.update({
         'store_list' : stores,
         'page_title': "Material Out Add",
@@ -1126,14 +1290,9 @@ def materialOutEdit(request,id):
 
     return render(request, 'portal/Material Out/edit.html', context)
    
-    
-
-
 @login_required
 def materialOutView(request,id):
-
     materialOut =  models.On_Transit_Transaction.objects.filter(pk=id).get()
-    # print(materialOut.source_store__name)
     context.update({
         'material_out': materialOut,
         'page_title': "Material Out View",
@@ -1144,7 +1303,6 @@ def materialOutView(request,id):
 
     return render(request, 'portal/Material Out/view.html', context)
 
-
 @login_required
 def materialOutPrint(request, id):
     materialOut = models.On_Transit_Transaction.objects.prefetch_related(
@@ -1152,13 +1310,15 @@ def materialOutPrint(request, id):
     total_amount = 0
     total_quantity = 0
     materialOutDets = list(models.On_Transit_Transaction_Details.objects.filter(on_transit_transaction_header_id = id).values('quantity','amount'))
-    
+    configList = models.Configuration_User.objects.first()
+
     for index in range (0,len(materialOutDets)):
         total_quantity += float(materialOutDets[index]['quantity'])
         total_amount += float(materialOutDets[index]['amount'])
 
 
     context.update({
+        'config': configList,
         'page_title': "DELIVERY CHALLAN",
         'materialOut': materialOut,
         'total_amount' : total_amount,
@@ -1273,15 +1433,32 @@ def purchaseBillList(request):
 @login_required
 def purchaseBillAdd(request):
     vendor_list = list(models.Vendor.objects.filter(status = 1, deleted =0).values('pk','name'))
-    context.update({
-        'Vendor_list': vendor_list,
-        'page_title': "Purchase Bill Add",
-        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},
-                        {'name': "Purchase Bill", 'url': reverse('superuser:purchaseBillList')},
-                        {'name': "Add"}]
-    })
+    if request.GET.get('id', None):
+        id = request.GET.get('id', None)
+        items = models.Item.objects.all()
+        purchaseBill = models.Purchase_Bill.objects.get(pk=id)
+        context.update({
+            'purchase_bill': purchaseBill,
+            'items': items,
+            'Vendor_list': vendor_list,
+            'page_title': "Purchase Bill Add",
+            'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},
+                            {'name': "Purchase Bill", 'url': reverse('superuser:purchaseBillList')},
+                            {'name': "Add"}]
+        })
 
-    return render(request, 'portal/Purchase Bill/add.html', context)
+        return render(request, 'portal/Purchase Bill/copy.html', context)
+
+    else:
+        context.update({
+            'Vendor_list': vendor_list,
+            'page_title': "Purchase Bill Add",
+            'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},
+                            {'name': "Purchase Bill", 'url': reverse('superuser:purchaseBillList')},
+                            {'name': "Add"}]
+        })
+
+        return render(request, 'portal/Purchase Bill/add.html', context)
 
 
 @login_required
@@ -1305,13 +1482,24 @@ def purchaseBillView(request,id):
     purchaseBill = models.Purchase_Bill.objects.get(pk=id)
     context.update({
         'purchase_bill': purchaseBill,
-        'page_title': "Purchase Bill Edit",
+        'page_title': "Purchase Bill View",
         'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},
                         {'name': "Purchase Bill", 'url': reverse('superuser:purchaseBillList')},
                         {'name': "View"}]
     })
 
     return render(request, 'portal/Purchase Bill/view.html', context)
+
+@login_required
+def purchaseBillTallyReport(request):
+    context.update({
+        'page_title': "Purchase Bill To Tally",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},
+                        {'name': "Purchase Bill To Tally", 'url': reverse('superuser:purchaseBillTallyReport')},
+                        {'name': "Process"}]
+    })
+
+    return render(request, 'portal/process/tally.html', context)
 
 
 @login_required
@@ -1403,3 +1591,16 @@ def reportActiveVendorIssueReciept(request):
         'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Reports"}, {'name': "VendorJobOrderIssueReciept"}, {'name': "Active VendorJobOrderIssueReciept", 'url': reverse('superuser:reportActiveVendorIssueReciept')}]
     })
     return render(request, 'portal/Report/vendorJobOrderIssueRecep.html', context)
+
+@login_required
+def invoiceStoreTransactionMaigration(request):
+    stores = models.Store.objects.filter(Q(store_item__isnull=False),Q(vendor_id__isnull=True)).distinct()
+    context.update({
+        'stores': stores,
+        'page_title': "Invoice to Store Transaction Migration",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},
+                        {'name': "Invoice to Store Transaction Migration", 'url': reverse('superuser:invoiceStoreTransactionMaigration')},
+                        {'name': "Migration Process"}]
+    })
+
+    return render(request, 'portal/process/inoviceStoreTransact.html', context)

@@ -64,7 +64,7 @@
                             <div class="col-md-4 mb-3">
                                 <label>Job Order Number <span class="required-indicator">*</span></label>
                                 <input type="text" id="order_number" name="order_number" class="form-control"
-                                    placeholder="Order Number" required>
+                                    placeholder="Order Number"  required readonly>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label>Job Order Date <span class="required-indicator">*</span></label>
@@ -83,7 +83,12 @@
 
                             <div class="col-md-12 mb-3 form-row third_party">
                             </div>
-                           <p class="warnText" hidden><span style="font-weight: bold;">Note:</span> You can only request one item for incoming & each out going quantity must be greater than incomming quantity </p>
+                            <div class="col-md-12 mb-3 form-row self">
+                            </div>
+                            <div class="col-md-12 mb-3 warnText" hidden>
+                                <p><span style="font-weight: bold;">Note:</span> You can only request one item for Production/Manufactured Material & each BOM/Raw Material quantity must be greater than Production/Manufactured Material quantity </p>
+                                <p> <span style="color: red;"> RM:</span> <span>Raw material ,</span> <span style="color: red;"> SFG:</span> <span > Semi Finish Goods ,</span> <span style="color: red;">FG:</span> <Span>Finished Good</Span></p>
+                            </div>
                             <!-- <div class="col-md-4 mb-3">
                                 <label>Order Item<span class="required-indicator">*</span></label>
                                 <div class="input-group">
@@ -105,7 +110,7 @@
                                 <textarea name="notes" rows="5" class="form-control" placeholder="Job Description" required></textarea>
                             </div>
                         </div>
-                        {% if request.user.is_superuser == 1 or 'add_item'|get_session_permission:request is not None %}
+                        {% if request.user.is_superuser == 1 or 'add_job_order_detail'|get_session_permission:request is not None %}
                         <button class="btn btn-success submit-btn" type="submit">Submit</button>
                         {% endif %}
                     </form>
@@ -138,6 +143,7 @@
         }, false);
     })();
 </script>
+
 <script>
     var vendor_options_text;
     var outgoing_item_options_text = ``;
@@ -278,9 +284,9 @@
         }
     }
 
-    function itemIncommingDrpDown(){
+    function itemIncomingDropDown(manufacturing_type){
         $.ajax({
-            url: "{% url 'api:itemList' %}?find_all=1",
+            url: "{% url 'api:itemList' %}?find_all=1&item_category=" + encodeURIComponent(manufacturing_type),
             type: 'GET',
             data: ({}),
             headers: {
@@ -288,11 +294,15 @@
             },
             success: function (response) {
                 if (response.status == 200) {
+                    console.log(response.page_items.length);
                     
                     incoming_item_options_text = `<option value="">Choose order item</option>`;
                     for (let index = 0; index < response.page_items.length; index++) {
                         incoming_item_options_text += `<option value="${response.page_items[index].pk}">${response.page_items[index].name}</option>`;
                     }
+                    $('.incoming_item_id').append(incoming_item_options_text);
+                    // console.log($('.incoming_item_id').html());
+                    
                     $('.selectpicker').select2({
                         placeholder: '',
                         templateResult: function(option) {
@@ -302,6 +312,7 @@
                             return option.text;
                         }
                     });
+                    callback("incoming")
                 } 
                 else {
                     alert(response.message);
@@ -310,8 +321,31 @@
             error: function (error) {
                 $('.error-msg-txt').text(error.responseJSON != null ? error.responseJSON.detail : error.statusText);
             }
+        
         });
     
+    }
+
+    function jobOrderNo(keyword){
+        $.ajax({
+            type: "GET",
+            url: "{% url 'api:jobOrderNo' %}?keyword=" + keyword,
+            data: {},
+            headers: {
+                'Authorization': getCookieValue("accessToken")
+            },
+            success: function (response) {
+                if (response.status == 200) {
+                    $('#order_number').val(response.joborderNo)
+                    
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function (error) {
+                $('.error-msg-txt').text(error.responseJSON != null ? error.responseJSON.detail : error.statusText);
+            }
+        });
     }
 
     $(document).ready(function () {
@@ -339,7 +373,7 @@
         });
 
         $.ajax({
-            url: "{% url 'api:itemList' %}?find_all=1",
+            url: "{% url 'api:itemList' %}?find_all=1&item_category=not-finish",
             type: 'GET',
             data: ({}),
             headers: {
@@ -348,10 +382,8 @@
             success: function (response) {
                 if (response.status == 200) {
                     outgoing_item_options_text += `<option value="">Choose item</option>`;
-                    incoming_item_options_text += `<option value="">Choose order item</option>`;
                     for (let index = 0; index < response.page_items.length; index++) {
                         outgoing_item_options_text += `<option value="${response.page_items[index].pk}">${response.page_items[index].name}</option>`;
-                        incoming_item_options_text += `<option value="${response.page_items[index].pk}">${response.page_items[index].name}</option>`;
                     }
                     $('.selectpicker').select2({
                         placeholder: '',
@@ -375,51 +407,42 @@
     });
 
     $(document).on('change', '.manufacturing_type', function(){
+        let keyword = $('.manufacturing_type').val()
+        jobOrderNo(keyword)
         if($(this).val()==="Self"){
             $(".third_party").empty()
-        }
-        if($(this).val()==="Third party"){
-
-            $(".third_party").html(`
-                <div class="col-md-4 mb-3">
-                    <label>Vendor<span class="required-indicator">*</span></label>
-                    <div class="input-group">
-                        <select class="custom-select selectpicker vendor_id" data-placeholder="Select Vendor" name="vendor_id" required>
-                            ${vendor_options_text}
-                        </select>
-                    </div>
-                </div>
+            $('.warnText').attr('hidden',false)
+            itemIncomingDropDown("finish")
+            $('.self').html(`
                 <div class="col-md-4 mb-3">
                     <label>With/Without item<span class="required-indicator">*</span></label>
                     <div class="input-group">
                         <select class="custom-select selectpicker with_item" data-placeholder="Choose" name="with_item" required>
-                            <option value=""></option>
-                            <option value="True">With item</option>
-                            <option value="False">Without item</option>
+                            <option selected value ="True">With item</option>
                         </select>
                     </div>
                 </div>
+                <div class="col-md-2 mb-3">
+                    <label>Time unit<span class="required-indicator">*</span></label>
+                    <div class="input-group">
+                        <select class="custom-select selectpicker timeSpan" data-placeholder="Choose" name="timeSpan" required>
+                            <option value=""></option>
+                            <option value="hr">Hr</option>
+                            <option value="day">Day</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label>Time Span<span class="required-indicator">*</span></label>
+                    <input type="number" onkeyup="checkMaxMin(this)"
+                    onkeypress="return (event.charCode >=45 && event.charCode <= 46) || (event.charCode >= 48 && event.charCode <= 57)"
+                    name="hr_day" min="0.0" class="form-control hr_day"
+                    placeholder="0" required>
+                </div>
                 <div class="col-md-4 mb-3">
                 </div>
-                <div class="col-md-12 mb-3 item_table pl-0 pr-0"></div>
-            `)
-        }
-        $('.selectpicker').select2({
-            placeholder: '',
-        });
-    })
-    
-    $(document).on('change', '.with_item', function(){
-        
-        if($(this).val()==="False"){
-            $(".item_table").empty()
-            $('.warnText').attr('hidden',true)
-        }
-        
-        if($(this).val()==="True"){
-            $('.warnText').removeAttr('hidden')
-            $(".item_table").html(`
-                <div class="container-fluid" style="border: 2px solid darkgray;">
+                <div class="col-md-12 mb-3 item_table pl-0 pr-0">
+                    <div class="container-fluid" style="border: 2px solid darkgray;">
                     <div class="row">
 
                         <div class="col-md-6 px-0" style="border-right: 2px solid darkgray;">
@@ -427,7 +450,7 @@
                                 <div class="row">
                                     <div class="col-md-12 d-flex align-items-center py-2" style="border-bottom: 2px solid darkgray;">
                                         <h5 class="text-center flex-grow-1 mb-0">
-                                            Outgoing Materials
+                                            BOM/Raw Material [RM, SFG]
                                         </h5> 
                                         <button type="button" class="btn add_btn  mr-2 "> 
                                             <i class="fa fa-plus"></i> 
@@ -470,7 +493,7 @@
                                 <div class="row">
                                     <div class="col-md-12 d-flex align-items-center" style="border-bottom: 2px solid darkgray;padding-top: 13px;padding-bottom: 13px;">
                                         <h5 class="text-center flex-grow-1 mb-0">
-                                            Incoming Materials
+                                            Production/Manufactured Material [SFG, FG]
                                         </h5> 
                                         
                                         <button type="button" class="btn add_btn  mr-2" hidden> 
@@ -486,7 +509,6 @@
                                                 <label>Item<span class="required-indicator">*</span></label>
                                                     <div class="input-group">
                                                         <select class="custom-select selectpicker incoming_item_id" name="incoming_item_id" data-placeholder="Select Item" required>
-                                                            ${incoming_item_options_text}
                                                         </select>
                                                         {% if request.user.is_superuser == 1 or 'add_item'|get_session_permission:request is not None %}
                                                             <div class="btn float-end addForm" data-text="Add New item"
@@ -516,6 +538,186 @@
                         </div>
 
                     </div>
+                </div>
+                
+                </div>
+                <div class="col-md-12 mb-12">
+                    <div class="col-md-12 mb-12">
+                        <label for="bomNeeded">Bom Needed</label><br>
+                        <input type="hidden" name="bomNeeded" value="0"><input type="checkbox" id="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
+                    </div>
+                </div>
+            `)
+        }
+        if($(this).val()==="Third party"){
+            $('.self').empty()
+            $('.warnText').attr('hidden',true)
+            $(".third_party").html(`
+                <div class="col-md-4 mb-3">
+                    <label>Vendor/Supplier<span class="required-indicator">*</span></label>
+                    <div class="input-group">
+                        <select class="custom-select selectpicker vendor_id" data-placeholder="Select Vendor" name="vendor_id" required>
+                            ${vendor_options_text}
+                        </select>
+                        {% if request.user.is_superuser == 1 or 'add_vendor'|get_session_permission:request is not None %}
+                            <div class="btn float-end addForm" data-text="Add New Vendor"
+                                data-form="addVendor" id="addVendorModal" data-toggle="modal" data-target="#addFormModal">
+                                <i class="fa fa-plus"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>With/Without item<span class="required-indicator">*</span></label>
+                    <div class="input-group">
+                        <select class="custom-select selectpicker with_item" data-placeholder="Choose" name="with_item" required>
+                            <option value=""></option>
+                            <option value="True">With item</option>
+                            <option value="False">Without item</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label>Time unit<span class="required-indicator">*</span></label>
+                    <div class="input-group">
+                        <select class="custom-select selectpicker timeSpan" data-placeholder="Choose" name="timeSpan" required>
+                            <option value=""></option>
+                            <option value="hr">Hr</option>
+                            <option value="day">Day</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label>Time Span<span class="required-indicator">*</span></label>
+                    <input type="number" onkeyup="checkMaxMin(this)"
+                    onkeypress="return (event.charCode >=45 && event.charCode <= 46) || (event.charCode >= 48 && event.charCode <= 57)"
+                    name="hr_day" min="0.0" class="form-control hr_day"
+                    placeholder="0" required>
+                </div>
+                <div class="col-md-12 mb-3 item_table pl-0 pr-0">
+                    
+                </div>
+            `)
+        }
+        $('.selectpicker').select2({
+            placeholder: '',
+        });
+    })
+    
+    $(document).on('change', '.with_item', function(){
+        
+        if($(this).val()==="False"){
+            $(".item_table").empty()
+            $('.warnText').attr('hidden',true)
+        }
+        
+        if($(this).val()==="True"){
+            $('.warnText').removeAttr('hidden')
+            itemIncomingDropDown("not-finish")
+            $(".item_table").html(`
+                <div class="container-fluid" style="border: 2px solid darkgray;">
+                    <div class="row">
+
+                        <div class="col-md-6 px-0" style="border-right: 2px solid darkgray;">
+                            <div class="container-fluid outgoing_materials">
+                                <div class="row">
+                                    <div class="col-md-12 d-flex align-items-center py-2" style="border-bottom: 2px solid darkgray;">
+                                        <h5 class="text-center flex-grow-1 mb-0">
+                                            BOM/Raw Material [RM, SFG]
+                                        </h5> 
+                                        <button type="button" class="btn add_btn  mr-2 "> 
+                                            <i class="fa fa-plus"></i> 
+                                        </button>
+                                        <button type="button" class="btn remove_btn" disabled>
+                                            <i class="fa fa-minus"></i>
+                                        </button>
+                                    </div>
+                                    <div class="container-fluid">
+                                        <div class="row outgoing_row">
+                                            <div class="col-md-5 py-2">
+                                                <label>Item<span class="required-indicator">*</span></label>
+                                                <div class="input-group">
+                                                    <select class="custom-select selectpicker outgoing_item_id" name="outgoing_item_id" data-placeholder="Select Item" required>
+                                                        ${outgoing_item_options_text}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 py-2">
+                                                <label>Quantity<span class="required-indicator">*</span></label>
+                                                <input type="text" onkeyup="checkMaxMin(this)"
+                                                    onkeypress="return (event.charCode >=45 && event.charCode <= 46) || (event.charCode >= 48 && event.charCode <= 57)"
+                                                    name="outgoing_quantity" min="0.0001" class="form-control outgoing_quantity"
+                                                    placeholder="Quantity" required>
+                                            </div>
+                                            <div class="col-md-3 py-2">
+                                                <label>UOM <span class="required-indicator">*</span></label>
+                                                <input type="text" 
+                                                    name="uom"  class="form-control uom"
+                                                    placeholder="" readonly>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 px-0">
+                            <div class="container-fluid incoming_materials">
+                                <div class="row">
+                                    <div class="col-md-12 d-flex align-items-center" style="border-bottom: 2px solid darkgray;padding-top: 13px;padding-bottom: 13px;">
+                                        <h5 class="text-center flex-grow-1 mb-0">
+                                            Production/Manufactured Material [SFG, FG]
+                                        </h5> 
+                                        
+                                        <button type="button" class="btn add_btn  mr-2" hidden> 
+                                            <i class="fa fa-plus"></i> 
+                                        </button>
+                                        <button type="button" class="btn remove_btn" disabled hidden>
+                                            <i class="fa fa-minus"></i>
+                                        </button>
+                                    </div>
+                                    <div class="container-fluid">
+                                        <div class="row incoming_row">
+                                            <div class="col-md-5 py-2">
+                                                <label>Item<span class="required-indicator">*</span></label>
+                                                    <div class="input-group">
+                                                        <select class="custom-select selectpicker incoming_item_id" name="incoming_item_id" data-placeholder="Select Item" required>
+                                                        </select>
+                                                        {% if request.user.is_superuser == 1 or 'add_item'|get_session_permission:request is not None %}
+                                                            <div class="btn float-end addForm" data-text="Add New item"
+                                                                    data-form="addItem" id="addItem"  data-toggle="modal" data-target="#addFormModal">
+                                                                    <i class="fa fa-plus"></i>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                            </div>
+                                            <div class="col-md-4 py-2">
+                                                <label>Quantity<span class="required-indicator">*</span></label>
+                                                <input type="text" onkeyup="checkMaxMin(this)"
+                                                    onkeypress="return (event.charCode >=45 && event.charCode <= 46) || (event.charCode >= 48 && event.charCode <= 57)"
+                                                    name="incoming_quantity" min="0.0001" class="form-control incoming_quantity"
+                                                    placeholder="Quantity" required>
+                                            </div>
+                                            <div class="col-md-3 py-2">
+                                                <label>UOM <span class="required-indicator">*</span></label>
+                                                <input type="text" 
+                                                    name="uom"  class="form-control uom"
+                                                    placeholder="" readonly>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                </div>
+                <div class="col-md-12 mb-12">
+                        <div class="col-md-12 mb-12">
+                            <label for="bomNeeded">Bom Needed</label><br>
+                            <input type="hidden" name="bomNeeded" value="0"><input type="checkbox" id="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
+                        </div>
                 </div>
             `)  
             // $(".items").html(`
@@ -757,6 +959,7 @@
                     $('.error-msg-txt').text(error.responseJSON != null ? error.responseJSON.detail : error.statusText);
                 }
             });
+        
         });
 
 </script>

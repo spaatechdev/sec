@@ -53,6 +53,7 @@ class User(AbstractBaseUser):
     pswd_token = models.CharField(max_length=255, blank=True, null=True)
     username = models.CharField(max_length=100, blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
+    user_sign = models.CharField(max_length=250, blank=True, null=True)
     role = models.ForeignKey(
         Role, on_delete=models.CASCADE, blank=True, null=True)
     is_superuser = models.BooleanField(default=False)
@@ -90,6 +91,7 @@ class User(AbstractBaseUser):
         "Is the user a member of staff?"
         # Simplest possible answer: All admins are staff
         return self.is_superuser
+
 
 class Configuration_User(models.Model):
     client_name = models.CharField(max_length=50, blank=True, null=True)
@@ -165,7 +167,7 @@ class City(models.Model):
 
 class Vendor(models.Model):
     name = models.CharField(max_length=50, blank=True, null=True)
-    address = models.CharField(max_length=100, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
     country = models.ForeignKey(
         Country, on_delete=models.CASCADE, blank=True, null=True)
     state = models.ForeignKey(
@@ -295,6 +297,7 @@ class Child_Uom(models.Model):
 
 class Item_Category(models.Model):
     name = models.CharField(max_length=50, blank=True, null=True)
+    semi_finished = models.BooleanField(default=False, blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -370,7 +373,7 @@ class Item(models.Model):
 
 class Store(models.Model):
     name = models.CharField(max_length=60, blank=False, null=False)
-    address = models.CharField(max_length=60, blank=False, null=False)
+    address = models.TextField(blank=True, null=True)
     country = models.ForeignKey(Country, on_delete=models.CASCADE, blank=True, null=True)
     state = models.ForeignKey(State, on_delete=models.CASCADE, blank=True, null=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, blank=True, null=True)
@@ -381,6 +384,7 @@ class Store(models.Model):
     contact_email = models.CharField(max_length=100, blank=True, null=True)
     manager_name = models.CharField(max_length=50, blank=True, null=True)
     vendor = models.OneToOneField(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    store_type = models.CharField(max_length=60, blank=False, null=False)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -486,6 +490,7 @@ class Purchase_Order(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     delivered_total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     delivery_status = models.SmallIntegerField(default=1)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -528,7 +533,8 @@ class Purchase_Order_Detail(models.Model):
 
 
 class Transaction_Type(models.Model):
-    name = models.CharField(max_length=100, blank=True, null=True)
+    name = models.CharField(max_length=20, blank=True, null=True)
+    desc = models.CharField(max_length=100, blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -549,12 +555,15 @@ class Job_Order(models.Model):
     manufacturing_type = models.CharField(max_length=20, choices=[("Self","Self"), ("Third party","Third party")], blank=True, null=True)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     with_item = models.CharField(max_length=20, choices=[("True", True), ("False", False)], blank=True,null=True)
+    job_status = models.SmallIntegerField(default=0) # 0->job just created 1->material issued partially or fully 2->job completed
+    estimated_time_day = models.CharField(max_length=20, blank=True, null=True)
+    actual_time_take = models.CharField(max_length=20, blank=True, null=True)
     # total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
     status = models.SmallIntegerField(default=1) #0 for not recieved 1 for recieved without inspection 2 for recived with inspection 
     deleted = models.BooleanField(default=0)
-    material_reciept = models.SmallIntegerField(default=0)
-    material_issue = models.SmallIntegerField(default=0)
+    material_reciept = models.SmallIntegerField(default=0) #0->no incoming material/partial received 1->incoming material full received
+    material_issue = models.SmallIntegerField(default=0) # No material Issued 1->Material issued partially 2->Full fulfilled job order
     created_at = models.DateTimeField(default=django.utils.timezone.now)
     updated_at = models.DateTimeField(default=django.utils.timezone.now)
     def __str__(self):
@@ -575,7 +584,8 @@ class Job_Order_Detail(models.Model):
     job_order_header = models.ForeignKey(Job_Order, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
-    quantity_result = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    required_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0) # for mterial Issue
+    quantity_result = models.DecimalField(max_digits=10, decimal_places=5, default=0) #for material recieved
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=now)
@@ -615,6 +625,7 @@ class Grn_Inspection_Transaction(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     transaction_type = models.ForeignKey(Transaction_Type, on_delete=models.CASCADE, blank=True, null=True)
     purchase_order_header = models.ForeignKey(Purchase_Order, on_delete=models.CASCADE, blank=True, null=True)
+    invoice_challan = models.CharField(max_length=25, blank=True, null=True)
     job_order = models.ForeignKey(Job_Order, on_delete=models.CASCADE, blank=True, null=True) 
     transaction_number = models.CharField(max_length=25, blank=True, null=True)
     transaction_date = models.DateField(blank=True, null=True)
@@ -666,6 +677,7 @@ class Store_Transaction(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True,related_name="vendor" )
     vendor_from = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True, related_name="vendor_from")
     transaction_type = models.ForeignKey(Transaction_Type, on_delete=models.CASCADE, blank=True, null=True)
+    invoice_challan = models.CharField(max_length=25, blank=True, null=True)
     purchase_order_header = models.ForeignKey(Purchase_Order, on_delete=models.CASCADE, blank=True, null=True)
     transaction_number = models.CharField(max_length=25, blank=True, null=True)
     transaction_date = models.DateField(blank=True, null=True)
@@ -679,6 +691,8 @@ class Store_Transaction(models.Model):
     job_order = models.ForeignKey(Job_Order, on_delete=models.CASCADE, blank=True, null=True)
     grn_inspection =  models.ForeignKey(Grn_Inspection_Transaction, on_delete=models.CASCADE, blank=True, null=True)
     reference_id = models.SmallIntegerField(default=0)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
+
 
     def __str__(self):
         return self.transaction_number
@@ -724,6 +738,7 @@ class On_Transit_Transaction(models.Model):
         Store, on_delete=models.CASCADE, blank=True, null=True , related_name="source_store")
     destination_store =  models.ForeignKey(
         Store, on_delete=models.CASCADE, blank=True, null=True, related_name="destination_store")
+    creator = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
     flag = models.SmallIntegerField(default=0)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
@@ -824,6 +839,7 @@ class Purchase_Bill(models.Model):
     total_gst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
     flag = models.SmallIntegerField(default=0)
+    purchase_tally_report = models.SmallIntegerField(default=0)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -938,7 +954,7 @@ class Outgoing_Incoming_Ratio_Details(models.Model):
     item_incomming = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True ,related_name="item_incomming")
     numerator = models.IntegerField(default=0)
     denominator = models.PositiveIntegerField(default=1)
-    ratio = models.CharField(max_length=50, blank=True, null=True)
+    ratio = models.CharField(max_length=50, blank=True, null=True) #ratio = outgoing : income
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -952,6 +968,22 @@ class Outgoing_Incoming_Ratio_Details(models.Model):
         db_table = 'outgoing_incoming_ratio_details'
         verbose_name_plural = 'outgoing_incoming_ratio_details'
 
+class User_Log_Details(models.Model):
+    user =  models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
+    task_name = models.CharField(max_length=100, blank=True, null=True)
+    time_stamp = models.DateTimeField(default=now)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+
+    def __str__(self):
+        return self.task_name
+
+    class Meta:
+        managed = True
+        db_table = 'user_log_details'
+        verbose_name_plural = 'user_log_details'
+
+
 class Test_Corn_Job(models.Model):
     test_message =  models.CharField(max_length=10, blank=True, null=True)
    
@@ -964,4 +996,53 @@ class Test_Corn_Job(models.Model):
         managed = True
         db_table = 'test_corn_job'
         verbose_name_plural = 'test_corn_job'
+
+class Invoice(models.Model):
+    date = models.DateField(blank=True, null=True)
+    invoice_no = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    invoice_ref_no = models.CharField(max_length=50, blank=True, null=True)
+    total_quantity = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    total_value = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, blank=True, null=True )
+    gross_total= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    gst_sales= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    cgst= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    sgst= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    round_off= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    igst_sales= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    igst= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    rent= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    export_sales= models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    store_transaction_add = models.SmallIntegerField(default=0)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.invoice_no
+
+    class Meta:
+        managed = True
+        db_table = 'invoice_header'
+        verbose_name_plural = 'invoice_header'
+
+class Invoice_Details(models.Model):
+    invoice_header = models.ForeignKey(Invoice, on_delete=models.CASCADE, blank=True, null=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True )
+    quantity = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    value = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    rate = models.DecimalField(max_digits=30, decimal_places=5, default=0)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.invoice_header.invoice_no
+
+    class Meta:
+        managed = True
+        db_table = 'invoice_details'
+        verbose_name_plural = 'invoice_details'
 

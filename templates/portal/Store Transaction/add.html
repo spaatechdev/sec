@@ -63,11 +63,17 @@
                         <input type="hidden" name="transaction_type_id" value="{{transaction_type}}">
                         <div class="form-row">
                             <div class="col-md-4 mb-3">
-                                <label>Vendor<span class="required-indicator">*</span></label>
+                                <label>Vendor/Supplier<span class="required-indicator">*</span></label>
                                 <div class="input-group">
                                     <select class="custom-select selectpicker" id="vendor_id" name="vendor_id" required>
                                         <option value="">Choose...</option>
                                     </select>
+                                    {% if request.user.is_superuser == 1 or 'add_vendor'|get_session_permission:request is not None %}
+                                    <div class="btn float-end addForm" data-text="Add New Vendor"
+                                        data-form="addVendor" id="addVendorModal" data-toggle="modal" data-target="#addFormModal">
+                                        <i class="fa fa-plus"></i>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -92,6 +98,12 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-md-4 mb-4">
+                                <label class="invoice_challan_lbl">Invoice <span class="required-indicator">*</span></label>
+                                <input type="text" onkeyup="checkMaxMin(this)"
+                                    name="invoice_challan"  class="form-control invoice_challan"
+                                    placeholder="Invoice/challanNo" required>
+                            </div>
                             <div class="purchase_order_details col-md-12">
                                 <div class="form-row content_parent">
                                     <div class="col-md-2 mb-3">
@@ -100,6 +112,12 @@
                                             <select class="custom-select selectpicker item_id" name="item_id" required>
                                                 <option value="">Choose...</option>
                                             </select>
+                                            {% if request.user.is_superuser == 1 or 'add_item'|get_session_permission:request is not None %}
+                                                <div class="btn float-end addForm" data-text="Add New item"
+                                                        data-form="addItem" id="addItem"  data-toggle="modal" data-target="#addFormModal">
+                                                        <i class="fa fa-plus"></i>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div class="col-md-1 mb-3">
@@ -332,6 +350,7 @@
         // console.log("328");
         purchase_job_order_type = $(this).val();
         // console.log(purchase_job_order_type);
+        //purchase order
         if (parseInt(purchase_job_order_type) == 1  ) {
             // $('.purchase_job_order_type_content').show();
             $('#purchase_job_order_header_id').attr('required', 'required');
@@ -340,8 +359,10 @@
             // $('#purchase_job_order_header_id').removeAttr('required');
             $('#purchase_job_order_header_id').removeAttr('disabled');
             callPurchaseOrder()
+            $('.invoice_challan_lbl').html(`Invoice <span class="required-indicator">*</span>`)
         
         }
+        // job order
         else if (parseInt(purchase_job_order_type) == 2){
             // $('.purchase_job_order_type_content').show();
             $('#purchase_job_order_header_id').attr('required', 'required');
@@ -350,14 +371,16 @@
             // $('#purchase_job_order_header_id').removeAttr('required');
             $('#purchase_job_order_header_id').removeAttr('disabled');
             callJobOrderList()
+            $('.invoice_challan_lbl').html(`Challan <span class="required-indicator">*</span>`)
         }
-
         else{
             // $('.purchase_job_order_type_content').hide();
+            console.log(378);
+            
             $('#purchase_job_order_header_id').removeAttr('required');
             $('#purchase_job_order_header_id').attr('disabled','true');
             $('#purchase_job_order_header_id').val("")
-            
+            $('.invoice_challan_lbl').html(`Invoice <span class="required-indicator">*</span>`)
         }
 
         purchase_details = `<div class="form-row content_parent">
@@ -458,6 +481,7 @@
                                                 <select class="custom-select selectpicker item_id" name="item_id" required>
                                                     ${item_options_text}
                                                 </select>
+                                                
                                             </div>
                                         </div>
                                         <div class="col-md-1 mb-3">
@@ -551,6 +575,7 @@
                                                 <select class="custom-select selectpicker item_id" name="item_id" required>
                                                     ${item_options_text}
                                                 </select>
+                                                
                                             </div>
                                         </div>
                                         <div class="col-md-1 mb-3">
@@ -626,6 +651,12 @@
                                                 <select class="custom-select selectpicker item_id" name="item_id" required>
                                                     ${item_options_text}
                                                 </select>
+                                                {% if request.user.is_superuser == 1 or 'add_item'|get_session_permission:request is not None %}
+                                                    <div class="btn float-end addForm" data-text="Add New item"
+                                                            data-form="addItem" id="addItem"  data-toggle="modal" data-target="#addFormModal">
+                                                            <i class="fa fa-plus"></i>
+                                                    </div>
+                                                {% endif %}
                                             </div>
                                         </div>
                                         <div class="col-md-1 mb-3">
@@ -921,13 +952,14 @@
                                                 <select class="custom-select selectpicker item_id" name="item_id" required disabled>
                                                     ${item_options.map((item) => `<option ${item.id == page_items[index].item_id ? "selected" : ""} value="${page_items[index].item_id}">${page_items[index].item__name}</option>`)}
                                                 </select>
+                                                
                                             </div>
                                         </div>
                                         <input type="hidden" name="detail_id" value="${page_items[index].pk}">
                                         <input type="hidden" name="item_id" value="${page_items[index].item_id}">
                                         <div class="col-md-1 mb-3">
                                             <label>Rate <span class="required-indicator">*</span></label>
-                                            <input type="text" onkeyup="checkMaxMin(this)" readonly
+                                            <input type="text" onkeyup="checkMaxMin(this)" 
                                                 onkeypress="return (event.charCode >=45 && event.charCode <= 46) || (event.charCode >= 48 && event.charCode <= 57)"
                                                 name="rate" min="0.01" class="form-control rate"
                                                 value="${page_items[index].item__price}" placeholder="0.00" required>
@@ -936,11 +968,11 @@
                                             <label>Quantity <span class="required-indicator">*</span></label>
                                             <input type="hidden" 
                                                 name="item_quantity_actual" class="form-control item_quantity"
-                                                value="${page_items[index].quantity }" >
+                                                value="${+page_items[index].quantity }" >
                                             <input type="text" onkeyup="checkMaxMin(this)"
                                                 onkeypress="return (event.charCode >=45 && event.charCode <= 46) || (event.charCode >= 48 && event.charCode <= 57)"
                                                 name="item_quantity" min="0.0001" max="${page_items[index].quantity_result }" class="form-control item_quantity"
-                                                value="${page_items[index].quantity_result }" placeholder="Quantity" required>
+                                                value="${+page_items[index].quantity_result }" placeholder="Quantity" required>
                                         </div>
                                         <div class="col-md-2 mb-3">
                                             <label>Amount <span class="required-indicator">*</span></label>
@@ -1031,13 +1063,14 @@
                                                 <select class="custom-select selectpicker item_id" name="item_id" required disabled>
                                                     ${item_options.map((item) => `<option ${item.id == response.page_items[index].item_id ? "selected" : ""} value="${response.page_items[index].item_id}">${response.page_items[index].item__name}</option>`)}
                                                 </select>
+                                                
                                             </div>
                                         </div>
                                         <input type="hidden" name="detail_id" value="${response.page_items[index].pk}">
                                         <input type="hidden" name="item_id" value="${response.page_items[index].item_id}">
                                         <div class="col-md-1 mb-3">
                                             <label>Rate <span class="required-indicator">*</span></label>
-                                            <input type="text" onkeyup="checkMaxMin(this)" readonly
+                                            <input type="text" onkeyup="checkMaxMin(this)" 
                                                 onkeypress="return (event.charCode >=45 && event.charCode <= 46) || (event.charCode >= 48 && event.charCode <= 57)"
                                                 name="rate" min="0.01" class="form-control rate"
                                                 value="${response.page_items[index].rate}" placeholder="0.00" required>
@@ -1181,7 +1214,7 @@
                 vendor_id = $('#vendor_id').val()
                 console.log(vendor_id);
                 $.ajax({
-                url: "{% url 'api:jobOrderList' %}?find_all=1&vendor_id=" + vendor_id+"&material_reciept=0&with_item=True",
+                url: "{% url 'api:jobOrderList' %}?find_all=1&vendor_id=" + vendor_id+"&material_reciept=0&material_issue=2&with_item=True&manufacturing_type=Third party",
                 type: 'GET',
                 data: ({}),
                 headers: {

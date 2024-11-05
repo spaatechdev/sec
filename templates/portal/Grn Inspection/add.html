@@ -64,7 +64,7 @@
                         <div class="form-row">
 
                             <div class="col-md-3 mb-3">
-                                <label>GRN Transaction Number<span class="required-indicator">*</span></label>
+                                <label>GRN Inspection Number<span class="required-indicator">*</span></label>
                                 <div class="input-group">
                                     <select class="custom-select selectpicker" id="insTraId" name="insTraId" required>
                                         <option value="">Choose...</option>
@@ -82,7 +82,7 @@
                             
 
                             <div class="col-md-3 mb-3">
-                                <label>Vendor </label>
+                                <label>Vendor/Supplier </label>
                                 <input type="text" id="vendor_name" name="vendor_name" class="form-control" placeholder=""
                                     readonly >
                                     <input type="hidden" class="vendor_id" name="vendor_id"  >
@@ -95,7 +95,12 @@
                                 required>
 
                             </div>
-
+                            <div class="col-md-4 mb-4">
+                                <label class="invoice_challan_lbl">Invoice <span class="required-indicator">*</span></label>
+                                <input type="text" onkeyup="checkMaxMin(this)"
+                                    name="invoice_challan"  class="form-control invoice_challan"
+                                    placeholder="Invoice/challanNo" required>
+                            </div>
 
                             <div class="col-md-12" id="table_form">
                                 
@@ -106,10 +111,11 @@
                                     onkeypress="return (event.charCode >=45 && event.charCode <= 46) || (event.charCode >= 48 && event.charCode <= 57)"
                                      placeholder="0.00"><br>
                             </div>
+                            {% if request.user.is_superuser == 1 or 'add_grn_inspection_transaction'|get_session_permission:request is not None %}
                             <div class="col-md-12" id="submit" hidden>
                                 <button onclick="return confirm('Please check the form again before submitting. It can not be changed')" class="btn btn-success submit-btn" type="submit">Submit</button>
                             </div>
-
+                            {% endif %}
 
                         </div>
                     </form>
@@ -248,6 +254,7 @@
 
                        $('#vendor_name').val(response.page_items[0].grn_inspection_transaction_header__vendor__name)
                        $('.vendor_id').val(response.page_items[0].grn_inspection_transaction_header__vendor_id)
+                       $('.invoice_challan').val(response.page_items[0].grn_inspection_transaction_header__invoice_challan)
                        
                        //if job order
                        if(response.page_items[0].grn_inspection_transaction_header__job_order_id != null){
@@ -291,15 +298,15 @@
                                         <div class="col-md-2 mb-3">
                                             <label>Reciept Quantity <span class="required-indicator">*</span></label>
                                             <input type="text" name="recp_quantity"  class="form-control recp_quantity"
-                                                value="${response.page_items[index].quantity }" readonly>
+                                                value="${+response.page_items[index].quantity }" readonly>
                                         </div>
                                         <div class="col-md-2 mb-3">
-                                            <label>rate <span class="required-indicator">*</span></label>
+                                            <label>Rate <span class="required-indicator">*</span></label>
                                             <input type="text" name="rate"  class="form-control rate"
                                                 value="${response.page_items[index].rate }" readonly>
                                         </div>
                                         <div class="col-md-2 mb-3">
-                                            <label>GST %* <span class="required-indicator">*</span></label>
+                                            <label>GST % <span class="required-indicator">*</span></label>
                                             <input type="text" name="gst_percentage"  class="form-control gst_percentage"
                                                 value="${response.page_items[index].gst_percentage }" readonly>
                                         </div>

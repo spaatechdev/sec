@@ -33,9 +33,11 @@ urlpatterns = [
     path('user-add', views.userAdd, name='userAdd'),
     path('user-edit/<int:id>', views.userEdit, name='userEdit'),
 
+    path('user-transaction-log', views.userTransactionLog, name='userTransactionLog'),
+
     path('client-config-list', views.clientConfigList, name='clientConfigList'),
     path('client-config-add', views.clientConfigAdd, name='clientConfigAdd'),
-     path('client-config-edit/<int:id>', views.clientConfigEdit, name='clientConfigEdit'),
+    path('client-config-edit/<int:id>', views.clientConfigEdit, name='clientConfigEdit'),
 
     path('vendor-list', views.vendorList, name='vendorList'),
     path('vendor-add', views.vendorAdd, name='vendorAdd'),
@@ -105,7 +107,7 @@ urlpatterns = [
     path('job-order-list', views.jobOrderList, name='jobOrderList'),
     path('job-order-add', views.jobOrderAdd, name='jobOrderAdd'),
     path('job-order-edit/<int:id>', views.jobOrderEdit, name='jobOrderEdit'),
-    # path('job-order-view/<int:id>', views.jobOrderView, name='jobOrderView'),
+    path('job-order-view/<int:id>', views.jobOrderView, name='jobOrderView'),
 
     # material issue url --- developed by saswata
     path('material-issue-list',views.materialIssueList, name='materialIssueList'),
@@ -150,6 +152,8 @@ urlpatterns = [
     path('purchase-bill-add',views.purchaseBillAdd, name='purchaseBillAdd'),
     path('purchase-bill-edit/<int:id>',views.purchaseBillEdit, name='purchaseBillEdit'),
     path('purchase-bill-view/<int:id>',views.purchaseBillView, name='purchaseBillView'),
+    path('purchase-bill-to-tally',views.purchaseBillTallyReport, name='purchaseBillTallyReport'),
+
    
     path('report-item-tracking-report',views.reportItemTrackingReport, name='reportItemTrackingReport'),
     path('report-inventory-summary', views.reportInventorySummary, name='reportInventorySummary'),
@@ -160,4 +164,6 @@ urlpatterns = [
     path('report-active-purchase-order', views.reportActivePurchaseOrder, name='reportActivePurchaseOrder'),
     path('report-active-purchase-materialIssue', views.reportActivePurchaseMaterialIssue, name='reportActivePurchaseMaterialIssue'),
     path('report-active-vendor-Reciept-materialIssue', views.reportActiveVendorIssueReciept, name='reportActiveVendorIssueReciept'),
+
+    path('invoice-store-transaction-maigration',views.invoiceStoreTransactionMaigration, name='invoiceStoreTransactionMaigration'),
 ]
