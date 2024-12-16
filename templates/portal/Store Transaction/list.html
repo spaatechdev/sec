@@ -104,6 +104,7 @@
                                     <th>#</th>
                                     <th>Vendor</th>
                                     <th>Transaction Number</th>
+                                    <th>Invoice/Challan</th>
                                     <th>Transaction Date</th>
                                     <th>Total Price</th>
                                     <th>Action</th>
@@ -147,7 +148,7 @@
                     view_url = "{% url 'superuser:storeTransactionView' 1 %}";
                     edit_url = "{% url 'superuser:storeTransactionEdit' 1 %}";
                     page_items = response.page_items;
-                    console.log(page_items)
+                    // console.log(page_items)
                     tbody_text = ``;
                     for (let index = 0; index < page_items.length; index++) {
                         const element = page_items[index];
@@ -155,6 +156,7 @@
                                 <td>${((response.current_page - 1) * response.per_page) +  index + 1}</td>
                                 <td>${element.vendor__name ? element.vendor__name : 'Self'}</td>
                                 <td>${element.transaction_number}</td>
+                                <td>${element.invoice_challan}</td>
                                 <td>${element.transaction_date}</td>
                                 <td>₹${element.total_amount}</td>
                                 <td>
