@@ -66,6 +66,17 @@ def ai_digit_5():
         num_part=Cast(Substr('transaction_number', Length('transaction_number') - 4,5), IntegerField())
     ).aggregate(max_value=Max('num_part'))['max_value'] or 0) + 1).zfill(5)
 
+
+def serial_no(transaction_type_id):
+    max_serial_no = models.Store_Transaction.objects.filter(transaction_type_id=transaction_type_id).aggregate(
+        models.Max('serial_no'))['serial_no__max']
+
+    if max_serial_no is None:
+        return 1
+
+    return int(max_serial_no) + 1
+
+
 def handle_empty_cell(x):
     if isinstance(x, str):
         if x.strip().isdigit():
@@ -4321,6 +4332,7 @@ def storeTransactionAdd(request):
                     "${CURRENT_YEAR}", current_year).replace(
                     "${AI_DIGIT_5}", ai_digit_5()).replace(
                     "${transaction_type_id}", str(transaction_type.id).zfill(2))
+                storeTransactionVhead.serial_no=serial_no(transaction_type.id)
                 if request.POST.get('vendor_id',None):
                     storeTransactionVhead.vendor_from_id = request.POST['vendor_id']
                 # storeTransactionVhead.transaction_type =models.Transaction_Type.objects.get(name = 'MIST')
@@ -4501,6 +4513,7 @@ def storeTransactionAdd(request):
                     "${CURRENT_YEAR}", current_year).replace(
                     "${AI_DIGIT_5}", ai_digit_5()).replace(
                     "${transaction_type_id}", str(transaction_type.id).zfill(2))
+                storeTransactionHeader.serial_no = serial_no(transaction_type.id)
                 storeTransactionHeader.transaction_date = request.POST['transaction_date']
                 storeTransactionHeader.total_amount = request.POST['total_amount']
                 storeTransactionHeader.notes = request.POST['notes']
@@ -4687,6 +4700,9 @@ def storeTransactionEdit(request):
             #setting new transaction number from old transaction number
             transaction_no = storeTranasctionHeaderOld.transaction_number
             new_transaction_no = re.sub(r"TR(\d*)_", lambda m: f"TR{int(m.group(1) or 0) + 1}_", transaction_no)
+            #setting new serial number from old serial number
+            serial_number = storeTranasctionHeaderOld.serial_no
+            new_serial_number = serial_number+0.01
             # new_transaction_no=str(storeTranasctionHeaderOld.transaction_number+1).zfill(5)
             # closing this old transaction remove from original list
             storeTranasctionHeaderOld.status = 0 
@@ -4869,6 +4885,7 @@ def storeTransactionEdit(request):
                     storeTransactionHeader.job_order_id =  request.POST[
                         'job_order_header_id']
                 storeTransactionHeader.transaction_number = new_transaction_no
+                storeTransactionHeader.serial_no = new_serial_number
                 storeTransactionHeader.transaction_date = request.POST['transaction_date']
                 storeTransactionHeader.total_amount = request.POST['total_amount']
                 storeTransactionHeader.notes = request.POST['notes']
@@ -5090,7 +5107,7 @@ def storeTransactionEdit(request):
         transaction.commit()    
         
         userId = request.COOKIES.get('userId', None)
-        text = f'Store Transaction Edit old Transaction no = {storeTranasctionHeaderOld.transaction_number} and  new transaction no = {new_transaction_no}'
+        text = f'Store Transaction Edit old Transaction no = {storeTranasctionHeaderOld.transaction_number},  new transaction no = {new_transaction_no} and new serial no = {serial_number}'
         user_log_details_add(userId,text)
         # # # print(4725)
         context.update({
@@ -6027,7 +6044,7 @@ def selfJobOrderReciept(request):
                 "${CURRENT_YEAR}", current_year).replace(
                 "${AI_DIGIT_5}", ai_digit_5()).replace(
                 "${transaction_type_id}", str(transaction_type.id).zfill(2))
-
+            storeTransactionHeader.serial_no = serial_no(transaction_type.id)
             storeTransactionHeader.transaction_date= request.POST['transaction_date']
             storeTransactionHeader.job_order_id = id
             storeTransactionHeader.creator_id = userId
@@ -6516,7 +6533,7 @@ def materialIssueAdd(request):
                 "${CURRENT_YEAR}", current_year).replace(
                 "${AI_DIGIT_5}", ai_digit_5()).replace(
                 "${transaction_type_id}", str(transaction_type.id).zfill(2))
-            
+            storeTransactionHeader.serial_no = serial_no(transaction_type.id)
             storeTransactionHeader.transaction_date=request.POST['issue_date']
             storeTransactionHeader.job_order_id = request.POST['job_order_id']
             storeTransactionHeader.total_amount = request.POST['total_amount']
@@ -6549,7 +6566,7 @@ def materialIssueAdd(request):
                     "${CURRENT_YEAR}", current_year).replace(
                     "${AI_DIGIT_5}", ai_digit_5()).replace(
                     "${transaction_type_id}", str(transaction_type.id).zfill(2))
-                
+                storeTransactionHeader.serial_no = serial_no(transaction_type.id)
                 storeTransactionHeaderIn.transaction_date=request.POST['issue_date']
                 storeTransactionHeaderIn.job_order_id = request.POST['job_order_id']
                 
@@ -6985,6 +7002,7 @@ def addGrnDetailisInsTransaction(request):
                         "${CURRENT_YEAR}", current_year).replace(
                         "${AI_DIGIT_5}", ai_digit_5()).replace(
                         "${transaction_type_id}", str(transaction_type.id).zfill(2))
+                    storeTransactionHeader.serial_no = serial_no(transaction_type.id)
                     storeTransactionHeader.transaction_date = request.POST['issue_date']
                     storeTransactionHeader.total_amount = request.POST['totalPrice']
                     storeTransactionHeader.grn_inspection_id = request.POST['insTraId']
@@ -7144,6 +7162,7 @@ def materialReturnAdd(request):
                     "${CURRENT_YEAR}", current_year).replace(
                     "${AI_DIGIT_5}", ai_digit_5()).replace(
                     "${transaction_type_id}", str(transaction_type.id).zfill(2))
+                material_return.serial_no = serial_no(transaction_type.id)
                 material_return.transaction_date = request.POST['return_date']
                 material_return.job_order=material_issue.job_order
 
@@ -7192,6 +7211,7 @@ def materialReturnAdd(request):
                     "${CURRENT_YEAR}", current_year).replace(
                     "${AI_DIGIT_5}", ai_digit_5()).replace(
                     "${transaction_type_id}", str(transaction_type.id).zfill(2))
+                material_return.serial_no = serial_no(transaction_type.id)
                 material_return.transaction_date = request.POST['return_date']
                 material_return.destination = request.POST['destination']
                 material_return.vehicle = request.POST['Vehicle_no']
@@ -7411,6 +7431,7 @@ def materialOutDetailsAdd(request):
                 "${CURRENT_YEAR}", current_year).replace(
                 "${AI_DIGIT_5}", ai_digit_5()).replace(
                 "${transaction_type_id}", str(transaction_type.id).zfill(2))
+            storeTransactionHeader.serial_no = serial_no(transaction_type.id)
             storeTransactionHeader.transaction_date = request.POST['issue_date']
             storeTransactionHeader.reference_id =  int(on_transit_transaction_header.id)
             storeTransactionHeader.save()
@@ -7750,6 +7771,7 @@ def materialInDetailsAdd(request):
                 "${CURRENT_YEAR}", current_year).replace(
                 "${AI_DIGIT_5}", ai_digit_5()).replace(
                 "${transaction_type_id}", str(transaction_type.id).zfill(2))
+            storeTransactionHeader.serial_no = serial_no(transaction_type.id)
             storeTransactionHeader.transaction_date = request.POST['issue_date']
             storeTransactionHeader.reference_id =  int(transitTransactionHeader.id)
             storeTransactionHeader.save()
@@ -7932,6 +7954,7 @@ def physicalInspectionDetailsAdd(request):
                 "${CURRENT_YEAR}", current_year).replace(
                 "${AI_DIGIT_5}", ai_digit_5()).replace(
                 "${transaction_type_id}", str(transaction_type.id).zfill(2))
+            storeTransactionHeader.serial_no = serial_no(transaction_type.id)
             storeTransactionHeader.transaction_date = request.POST['issue_date']
             storeTransactionHeader.reference_id =  int(physicalInspectionHeader.id)
             storeTransactionHeader.save()

@@ -6,6 +6,9 @@ from datetime import datetime
 from django.core.validators import RegexValidator
 from django.utils.text import gettext_lazy as _
 import django
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+from django.apps import apps
 
 class Role(models.Model):
     name = models.CharField(max_length=50)
@@ -734,7 +737,7 @@ class Store_Transaction(models.Model):
     reference_id = models.SmallIntegerField(default=0)
     destination =  models.CharField(max_length=25, blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
-
+    serial_no = models.DecimalField(max_digits=10, decimal_places=2, null=True)
 
     def __str__(self):
         return self.transaction_number
