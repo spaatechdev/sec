@@ -404,6 +404,7 @@ class Store(models.Model):
     manager_name = models.CharField(max_length=50, blank=True, null=True)
     vendor = models.OneToOneField(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     store_type = models.CharField(max_length=60, blank=False, null=False)
+    logical_grn_store = models.SmallIntegerField(default=0) # 1 for logiaclgrn input store ; 2 logicalgrn output store 
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -423,12 +424,10 @@ class Store_Item(models.Model):
         Store, on_delete=models.CASCADE, blank=True, null=True)
     item = models.ForeignKey(
         Item, on_delete=models.CASCADE, blank=True, null=True)
-    opening_qty = models.DecimalField(
-        max_digits=10, decimal_places=5, default=0)
-    on_hand_qty = models.DecimalField(
-        max_digits=10, decimal_places=5, default=0)
-    closing_qty = models.DecimalField(
-        max_digits=10, decimal_places=5, default=0)
+    closing_qty = models.DecimalField(max_digits=15, decimal_places=5, default=0)
+    opening_qty = models.DecimalField(max_digits=15, decimal_places=5, default=0)
+    on_hand_qty = models.DecimalField(max_digits=15, decimal_places=5, default=0)
+
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -443,11 +442,30 @@ class Store_Item(models.Model):
         verbose_name_plural = 'store_items'
 
 
+class Bill_Of_Material_Master(models.Model):
+    name = models.CharField(max_length=250, blank=True, null=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.item.name
+
+    class Meta:
+        managed = True
+        db_table = 'bill_of_material_headers_master'
+        verbose_name_plural = 'bill_of_material_headers_master'
+
+
 class Bill_Of_Material(models.Model):
+    bom_master = models.ForeignKey(Bill_Of_Material_Master, on_delete=models.CASCADE, blank=True, null=True)
     bom_item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
-    # name = models.CharField(max_length=250, blank=True, null=True)
+    name = models.CharField(max_length=250, blank=True, null=True)
     uom = models.ForeignKey(Uom, on_delete=models.CASCADE, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    bom_type = models.CharField(max_length=250, blank=True, null=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_final = models.SmallIntegerField(default=0)
     level = models.SmallIntegerField(default=0)
@@ -469,7 +487,7 @@ class Bill_Of_Material_Detail(models.Model):
     bill_of_material_header = models.ForeignKey(Bill_Of_Material, on_delete=models.CASCADE, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
     bom_level = models.ForeignKey(Bill_Of_Material, related_name="bomLevel", on_delete=models.CASCADE, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
@@ -527,12 +545,12 @@ class Purchase_Order(models.Model):
 class Purchase_Order_Detail(models.Model):
     purchase_order_header = models.ForeignKey(Purchase_Order, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     gst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     amount_with_gst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    delivered_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    delivered_quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     delivered_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     delivered_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     delivered_gst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -578,6 +596,7 @@ class Job_Order(models.Model):
     job_status = models.SmallIntegerField(default=0) # 0->job just created 1->material issued partially or fully 2->job completed
     estimated_time_day = models.CharField(max_length=20, blank=True, null=True)
     actual_time_take = models.CharField(max_length=20, blank=True, null=True)
+    bom_type_head  = models.ForeignKey(Bill_Of_Material, on_delete=models.CASCADE, blank=True, null=True)
     # total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
     status = models.SmallIntegerField(default=1) #0 for not recieved 1 for recieved without inspection 2 for recived with inspection 
@@ -603,9 +622,9 @@ class Job_Order_Detail(models.Model):
 
     job_order_header = models.ForeignKey(Job_Order, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
-    required_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0) # for mterial Issue
-    quantity_result = models.DecimalField(max_digits=10, decimal_places=5, default=0) #for material recieved
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    required_quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0) # for mterial Issue
+    quantity_result = models.DecimalField(max_digits=10, decimal_places=3, default=0) #for material recieved/utilised
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=now)
@@ -653,6 +672,7 @@ class Grn_Inspection_Transaction(models.Model):
     ins_done = models.SmallIntegerField(default=0, blank=True, null=True)
     ins_completed = models.SmallIntegerField(default=0, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    is_logical_grn_store = models.SmallIntegerField(default=0, blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -671,9 +691,10 @@ class Grn_Inspection_Transaction_Detail(models.Model):
     grn_inspection_transaction_header = models.ForeignKey(Grn_Inspection_Transaction, on_delete=models.CASCADE, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
-    accepted_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
-    reject_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    logical_grn_store = models.SmallIntegerField(default=0, blank=True, null=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    accepted_quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    reject_quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     inspection_date = models.DateField(blank=True, null=True)
     ins_done = models.SmallIntegerField(default=0)
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -704,7 +725,9 @@ class Store_Transaction(models.Model):
     transaction_date = models.DateField(blank=True, null=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     vehicle = models.CharField(max_length=25, blank=True, null=True)
+    dispatch_no = models.CharField(max_length=25, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    is_logical_grn_store = models.SmallIntegerField(default=0, blank=True, null=True)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
     created_at = models.DateTimeField(default=now)
@@ -712,6 +735,7 @@ class Store_Transaction(models.Model):
     job_order = models.ForeignKey(Job_Order, on_delete=models.CASCADE, blank=True, null=True)
     grn_inspection =  models.ForeignKey(Grn_Inspection_Transaction, on_delete=models.CASCADE, blank=True, null=True)
     reference_id = models.SmallIntegerField(default=0)
+    destination =  models.CharField(max_length=25, blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
 
 
@@ -728,13 +752,15 @@ class Store_Transaction_Detail(models.Model):
     store_transaction_header = models.ForeignKey(Store_Transaction, on_delete=models.CASCADE, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    logical_grn_store = models.SmallIntegerField(default=0, blank=True, null=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     gst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     amount_with_gst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.SmallIntegerField(default=1)
     deleted = models.BooleanField(default=0)
+    direction = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(default=now)
     updated_at = models.DateTimeField(default=now)
 
@@ -778,9 +804,9 @@ class On_Transit_Transaction(models.Model):
 class On_Transit_Transaction_Details(models.Model):
     on_transit_transaction_header = models.ForeignKey(On_Transit_Transaction, on_delete=models.CASCADE, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
-    recieved_quntity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
-    reject_quantity = models.DecimalField(max_digits=10, decimal_places=5, default=0)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    recieved_quntity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    reject_quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
@@ -853,12 +879,22 @@ class Purchase_Bill(models.Model):
     e_way_no =  models.CharField(max_length=50, blank=True, null=True)
     e_way_date = models.DateField(blank=True, null=True)
     vechical_no = models.CharField(max_length=50, blank=True, null=True)
+    total_amount_exclude_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_gst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_igst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_cgst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_sgst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0) # total amout with discount
     total_gst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tds_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tds_deduction = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tcs_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tcs_deduction = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    roundof_total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    round_off_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    accet_amount_tax_deduc = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
     flag = models.SmallIntegerField(default=0)
     purchase_tally_report = models.SmallIntegerField(default=0)
@@ -885,7 +921,10 @@ class Purchase_Bill_Details(models.Model):
     uom = models.ForeignKey(
         Uom, on_delete=models.CASCADE, blank=True, null=True)
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0) # with discount
+    amount_exclude_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0) #without dusocunt
+    discount_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     gst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     gst_amount  = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     igst_percentage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -1070,3 +1109,26 @@ class Invoice_Details(models.Model):
         db_table = 'invoice_details'
         verbose_name_plural = 'invoice_details'
 
+class Store_Item_Current(models.Model):
+    store = models.ForeignKey(
+        Store, on_delete=models.CASCADE, blank=True, null=True)
+    item = models.ForeignKey(
+        Item, on_delete=models.CASCADE, blank=True, null=True)
+    closing_qty = models.DecimalField(max_digits=15, decimal_places=5, default=0)
+    opening_qty = models.DecimalField(max_digits=15, decimal_places=5, default=0)
+    on_hand_qty = models.DecimalField(max_digits=15, decimal_places=5, default=0)
+    quantity_Transfer =  models.CharField(max_length=100, blank=True, null=True)
+    store_transaction =  models.ForeignKey(Store_Transaction, on_delete=models.CASCADE, blank=True, null=True)
+    transaction_date = models.DateField(blank=True, null=True)
+    status = models.SmallIntegerField(default=1)
+    deleted = models.BooleanField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return self.store.name + "=>" + self.item.name
+
+    class Meta:
+        managed = True
+        db_table = 'store_items_current'
+        verbose_name_plural = 'store_items_current'

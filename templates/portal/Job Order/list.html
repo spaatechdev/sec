@@ -144,6 +144,12 @@
                                                         </select>
                                                     </div>
                                                 </div>
+                                                <div class="col-md-5 py-2">
+                                                    <label>Transaction Date<span class="required-indicator">*</span></label>
+                                                    <div class="input-group">
+                                                        <input type="date" name="transaction_date" class="form-control transaction_date" placeholder="transaction Date" required>
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-4 py-2">
                                                     <label>Quantity<span class="required-indicator">*</span></label>
                                                     <input type="text" onkeyup="checkMaxMin(this)"
@@ -213,14 +219,15 @@
                     edit_url = "{% url 'superuser:jobOrderEdit' 1 %}";
                     view_url = "{% url 'superuser:jobOrderView' 1 %}";
                     copy_url = "{% url 'superuser:jobOrderAdd'  %}?id=";
+                    print_url = "{% url 'superuser:jobOrderPrint' 1 %}";
                     page_items = response.page_items;
                     tbody_text = ``;
                     for (let index = 0; index < page_items.length; index++) {
                         const element = page_items[index];
                         tbody_buttom_text =``
-                        console.log((element.manufacturing_material_type == 'FG' ? 'true' : 'false'));
+                        // console.log((element.manufacturing_material_type == 'FG' ? 'true' : 'false'));
                         if(element.material_issue > 1 && element.material_reciept < 1){
-                            console.log(223);
+                            // console.log(223);
                             
                             tbody_buttom_text = `<td>
                                 {% if request.user.is_superuser == 1 or 'change_job_order'|get_session_permission:request is not None %}
@@ -241,10 +248,13 @@
                                         <i class="fa fa-stop"></i>
                                         </a>
                                     {% endif %}` : ''}
+                                {% if request.user.is_superuser == 1 or 'view_job_order'|get_session_permission:request is not None %}
+                                <a href="${print_url.replace('1', element.pk)}" class="table-action mg-r-10"> <i class="fa fa-print"></i> </a>
+                                {% endif %}
                                 </td>`
                         }
                         
-                        if(element.material_reciept == 1){
+                        if(element.material_reciept == 1 || element.job_status == 2){
                             tbody_buttom_text = `<td>
                                 {% if request.user.is_superuser == 1 or 'change_job_order'|get_session_permission:request is not None %}
                                 <a href="#" onclick="return alert('cannot edit  as material already get issued on this job order')" class="table-action mg-r-10 "> <i class="fa fa-pencil"></i> </a>    
@@ -258,10 +268,13 @@
                                 {% if request.user.is_superuser == 1 or 'add_job_order'|get_session_permission:request is not None %}
                                 <a href="${copy_url + element.pk}" class="table-action mg-r-10"> <i class="fa fa-copy"></i> </a>
                                 {% endif %}
+                                {% if request.user.is_superuser == 1 or 'view_job_order'|get_session_permission:request is not None %}
+                                <a href="${print_url.replace('1', element.pk)}" class="table-action mg-r-10"> <i class="fa fa-print"></i> </a>
+                                {% endif %}
                                 </td>`
                         }
                         if(element.material_issue < 2 ){
-                            console.log('153');
+                            // console.log('153');
                             tbody_buttom_text = `<td>
                                     {% if request.user.is_superuser == 1 or 'change_job_order'|get_session_permission:request is not None %}
                                     <a href="${edit_url.replace('1', element.pk)}" class="table-action mg-r-10"> <i class="fa fa-pencil"></i> </a>    
@@ -274,9 +287,13 @@
                                     {% endif %}
                                     {% if request.user.is_superuser == 1 or 'add_job_order'|get_session_permission:request is not None %}
                                     <a href="${copy_url + element.pk}" class="table-action mg-r-10"> <i class="fa fa-copy"></i> </a>
+                                    {% endif %} 
+                                    {% if request.user.is_superuser == 1 or 'view_job_order'|get_session_permission:request is not None %}
+                                    <a href="${print_url.replace('1', element.pk)}" class="table-action mg-r-10" target="_blank"> <i class="fa fa-print"></i> </a>
                                     {% endif %}
                                     </td>`
                         }
+                        
                         tbody_text += `<tr>
                                 <td>${((response.total_pages - 1) * response.per_page) +  index + 1}</td>
                                 <td>${element.order_number}</td>
@@ -338,7 +355,7 @@
     });
 
     function loadMaterialInData(id) {
-        console.log(id);
+        // // console.log(id);
         $('.pk').val(id)
         let store_option_text =``
         $.ajax({
@@ -385,11 +402,12 @@
 
     $(document).on('keyup', '#search', function () {
         keyword = $(this).val();
+        getJobOrderList(keyword)
     })
 
     $(document).on('submit','#create_form', function(e) {
         // Collect the data from the modal input fields
-        console.log('305');
+        // console.log('305');
         
         e.preventDefault();
         $('.submit-btn').text('Submitting...');

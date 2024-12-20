@@ -663,13 +663,21 @@ def gstAdd(request):
     })
     return render(request, 'portal/GST/add.html', context)
 
-
+@login_required
+def billOfMaterialMasterList(request):
+    context.update({
+        'page_title': "Bill Of Material Master List",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Bill Of Material Master", 'url': reverse('superuser:billOfMaterialMasterList')}, {'name': "MasterList"}]
+    })
+    return render(request, 'portal/Bill Of Material/listMaster.html', context)
 
 @login_required
 def billOfMaterialList(request):
+    id = request.GET['id']
     context.update({
         'page_title': "Bill Of Material List",
-        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Bill Of Material", 'url': reverse('superuser:billOfMaterialList')}, {'name': "List"}]
+        'Page_id' : id,
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},{'name': "Bill Of Material Master", 'url': reverse('superuser:billOfMaterialMasterList')}, {'name': "Bill Of Material", 'url': reverse('superuser:billOfMaterialList')}, {'name': "List"}]
     })
     return render(request, 'portal/Bill Of Material/list.html', context)
 
@@ -677,10 +685,11 @@ def billOfMaterialList(request):
 @login_required
 def billOfMaterialAdd(request):
     bom_items_id_list = list(models.Bill_Of_Material.objects.all().values_list('bom_item_id', flat=True))
+    # max_value = models.Bill_Of_Material.objects.aggregate(max_bom_type=Max('bom_type'))['bom_type'] +1
     context.update({
         'bom_items_id_list': bom_items_id_list,
         'page_title': "Bill Of Material Add",
-        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Bill Of Material", 'url': reverse('superuser:billOfMaterialList')}, {'name': "Add"}]
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Bill Of Material Master", 'url': reverse('superuser:billOfMaterialMasterList')},  {'name': "Add"}]
     })
     return render(request, 'portal/Bill Of Material/add.html', context)
 
@@ -699,7 +708,7 @@ def billOfMaterialEdit(request, id):
         'items': items,
         'uoms': uoms,
         'page_title': "Bill Of Material Edit",
-        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Bill Of Material", 'url': reverse('superuser:billOfMaterialList')}, {'name': "Edit"}]
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Bill Of Material Master", 'url': reverse('superuser:billOfMaterialMasterList')},  {'name': "Edit"}]
     })
     return render(request, 'portal/Bill Of Material/edit.html', context)
 
@@ -738,7 +747,7 @@ def billOfMaterialView(request, id):
     context.update({
         'billOfMaterial': billOfMaterial,
         'page_title': "Bill Of Material View",
-        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Bill Of Material", 'url': reverse('superuser:billOfMaterialList')}, {'name': "View"}]
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Bill Of Material Master", 'url': reverse('superuser:billOfMaterialMasterList')},  {'name': "View"}]
     })
     return render(request, 'portal/Bill Of Material/view.html', context)
 
@@ -871,6 +880,13 @@ def storeItemList(request):
     })
     return render(request, 'portal/Store Item/list.html', context)
 
+@login_required
+def storeItemTrackingList(request):
+    context.update({
+        'page_title': "Store Item Tracking List",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Store Item", 'url': reverse('superuser:storeItemList')}, {'name': "Tracking List"}]
+    })
+    return render(request, 'portal/Store Item/list2.html', context)
 
 @login_required
 def storeItemAdd(request):
@@ -904,6 +920,16 @@ def storeTransactionList(request):
     })
     return render(request, 'portal/Store Transaction/list.html', context)
 
+
+@login_required
+def stockTransfer(request):
+    stores =models.Store.objects.filter(store_item__isnull=False,).distinct()
+    context.update({
+        'page_title': "Stock Transfer",
+        'stores': stores,
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Store Item", 'url': reverse('superuser:storeItemList')}, {'name': "Stock Transfer"}]
+    })
+    return render(request, 'portal/Store Item/stockTransfer.html', context)
 
 @login_required
 def storeTransactionAdd(request):
@@ -960,6 +986,23 @@ def storeTransactionView(request, id):
     })
     return render(request, 'portal/Store Transaction/view.html', context)
 
+@login_required
+def storeTransactionPrint(request, id):
+    configList = models.Configuration_User.objects.first()
+    storeTransaction = models.Store_Transaction.objects.prefetch_related('store_transaction_detail_set').get(pk=id)
+    storeTransactionDetail = models.Store_Transaction_Detail.objects.filter(store_transaction_header=id,logical_grn_store=1).first()
+    storeTransactionDetailsumAmoutnt = sum(item.amount for item in storeTransaction.store_transaction_detail_set.filter(logical_grn_store=1))
+    storeTransactionDetailsumGstAmoutnt = sum(item.amount_with_gst for item in storeTransaction.store_transaction_detail_set.filter(logical_grn_store=1))
+    context.update({
+        'config': configList,
+        'storeTransaction': storeTransaction,
+        'storeTransactionDetailsumAmoutnt': storeTransactionDetailsumAmoutnt,
+        'storeTransactionDetailsumGstAmoutnt': storeTransactionDetailsumGstAmoutnt,
+        'storeTransactionDetail':storeTransactionDetail,
+        'page_title': "Logical GRN Transaction Challan ",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Store Transaction", 'url': reverse('superuser:storeTransactionList')}]
+    })
+    return render(request, 'portal/Store Transaction/print.html', context)
 
 @login_required
 def jobOrderList(request):
@@ -976,17 +1019,18 @@ def jobOrderAdd(request):
     # for bom in models.Bill_Of_Material.objects.all():
     #     item_id_n_bom_id[str(bom.bom_item_id)]=bom.id
     # bom_items_id_list = list(models.Bill_Of_Material.objects.all().values_list('bom_item_id', flat=True))
+    item_ids = list(models.Bill_Of_Material_Master.objects.values_list('item_id', flat=True))
    
     if request.GET.get('id', None):
         id = request.GET.get('id', None)
-        print(id)
+        # print(id)
         jobOrder = models.Job_Order.objects.prefetch_related('job_order_detail_set').get(pk=id)
         jobOrderCount = models.Job_Order.objects.filter(manufacturing_type=jobOrder.manufacturing_type).count()
         vendorShort = 'SLF' if jobOrder.manufacturing_type == 'Self' else 'TPM'
         jobOrderNumber =  env("JOB_ORDER_NUMBER_SEQ").replace("${VENDOR_SHORT}", vendorShort).replace(
                 "${AI_DIGIT_3}", str(jobOrderCount + 1).zfill(3)).replace("${FINANCE_YEAR}", datetime.today().strftime('%y') + "-" + (datetime(datetime.today().year + 1, 1, 1).strftime('%y')))
         jobOrder.order_number =jobOrderNumber
-        print(jobOrder.order_number)
+        # print(jobOrder.order_number)
         stores = models.Store.objects.filter(status=1, deleted=0)
         vendors = models.Vendor.objects.filter(status=1, deleted=0)
         items = models.Item.objects.filter(status=1, deleted=0)
@@ -998,6 +1042,7 @@ def jobOrderAdd(request):
             'jobOrder': jobOrder,
             'items': items,
             'vendors': vendors,
+            'item_ids': item_ids,
             'outgoing_details': outgoing_details,
             'incoming_details': incoming_details,
             'page_title': "Job Order Add",
@@ -1006,8 +1051,10 @@ def jobOrderAdd(request):
         return render(request, 'portal/Job Order/edit.html', context)
 
     else:
+        # item_ids = list(models.Bill_Of_Material_Master.objects.values_list('item_id', flat=True))
         context.update({
             'page_title': "Job Order Add",
+            'item_ids': item_ids,
             'breadcrumbs': [
                 {
                     'name': "Dashboard", 
@@ -1036,10 +1083,12 @@ def jobOrderEdit(request, id):
     time_value = ''.join(filter(str.isdigit, jobOrder.estimated_time_day))
     outgoing_details = jobOrder.job_order_detail_set.filter(direction='outgoing')
     incoming_details = jobOrder.job_order_detail_set.filter(direction='incoming')
+    item_ids = list(models.Bill_Of_Material_Master.objects.values_list('item_id', flat=True))
 
     context.update({
         'jobOrder': jobOrder,
         'items': items,
+        'item_ids': item_ids,
         'vendors': vendors,
         'time_unit':time_unit,
         'time_value':time_value,
@@ -1065,6 +1114,20 @@ def jobOrderView(request, id):
         'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Job Order", 'url': reverse('superuser:jobOrderList')}, {'name': "View"}]
     })
     return render(request, 'portal/Job Order/view.html', context)
+
+
+@login_required
+def jobOrderPrint(request, id):
+    configList = models.Configuration_User.objects.first()
+    jobOrder = models.Job_Order.objects.prefetch_related('job_order_detail_set').get(pk=id)
+    print(jobOrder.job_order_detail_set.all())
+    context.update({
+        'config': configList,
+        'jobOrder': jobOrder,
+        'page_title': "Job Order",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Job Order", 'url': reverse('superuser:jobOrderList')}, {'name': "View"}]
+    })
+    return render(request, 'portal/Job Order/print.html', context)
 
 #--- developed by saswata
 
@@ -1117,9 +1180,13 @@ def materialIssueView(request,id):
 
 @login_required
 def materialIssuePrint(request, id):
+    print(1111)
     materialIssue = models.Store_Transaction.objects.prefetch_related(
         'store_transaction_detail_set').get(pk=id)
+    print(materialIssue)
     total_amount = 0
+    configList = models.Configuration_User.objects.first()
+    
     materialIssuestores = list(models.Store_Transaction_Detail.objects.filter(store_transaction_header = id).values('pk','store__name',
     'store__address','store__country__name',
     'store__state__name',
@@ -1131,8 +1198,10 @@ def materialIssuePrint(request, id):
         'page_title': "Delivery Challan",
         'materialIssue': materialIssue,
         'materialIssuestore':materialIssuestores[0],
-        'materialIssueNumToword': materialIssueNumToword
+        'materialIssueNumToword': materialIssueNumToword,
+        'config': configList
     })
+   
     return render(request, 'portal/Material Issue/print.html', context)
 
 
@@ -1262,6 +1331,21 @@ def materialReturnView(request,id):
     })
 
     return render(request, 'portal/Material Return/view.html', context)
+
+@login_required
+def materialReturnPrint(request,id):
+    configList = models.Configuration_User.objects.first()
+    material_return = models.Store_Transaction.objects.prefetch_related('store_transaction_detail_set').get(pk=id)
+    context.update({
+        'material_return': material_return,
+        'config': configList,
+        'page_title': "Material Return",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},
+                        {'name': "Material Return", 'url': reverse('superuser:materialReturnList')},
+                        {'name': "View"}]
+    })
+
+    return render(request, 'portal/Material Return/print.html', context)
 
 # on transit transaction --- developed by saswata
 
@@ -1482,9 +1566,11 @@ def purchaseBillAdd(request):
 
 @login_required
 def purchaseBillEdit(request,id):
-    gst_list = models.Gst.objects.get(status = 1, deleted =0)
+    gst_list = models.Gst.objects.filter(status = 1, deleted =0)
+    print()
     purchaseBill = models.Purchase_Bill.objects.get(pk=id)
     context.update({
+        'gst_list': gst_list,
         'purchase_bill': purchaseBill,
         'page_title': "Purchase Bill Edit",
         'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')},
@@ -1545,7 +1631,9 @@ def reportInventorySummary(request):
 
 @login_required
 def reportInventoryStorewise(request):
+    vendors = models.Vendor.objects.all()
     context.update({
+        'vendors': vendors,
         'page_title': "Inventory Storewise",
         'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "Reports"}, {'name': "Inventory"}, {'name': "Inventory Storewise", 'url': reverse('superuser:reportInventoryStorewise')}]
     })
@@ -1645,3 +1733,13 @@ def reportProductionView(request,id):
     })
     return render(request, 'portal/Report/Production/view.html', context)
 
+@login_required
+def storeItemCurrentMigrate(request):
+    transaction_type = models.Transaction_Type.objects.filter(status=1, deleted=0)
+    print(transaction_type)
+    context.update({
+        'transaction_types': transaction_type,
+        'page_title': "Current Store Item Migration",
+        'breadcrumbs': [{'name': "Dashboard", 'url': reverse('superuser:dashboard')}, {'name': "store ItemCurrent Tracking",'url': reverse('superuser:storeItemTrackingList')}, {'name': "Migration"}]
+    })
+    return render(request, 'portal/Store Item/stockMigration.html', context)

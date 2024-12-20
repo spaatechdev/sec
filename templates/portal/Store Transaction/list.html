@@ -104,6 +104,7 @@
                                     <th>#</th>
                                     <th>Vendor</th>
                                     <th>Transaction Number</th>
+                                    <th>Invoice/Challan</th>
                                     <th>Transaction Date</th>
                                     <th>Total Price</th>
                                     <th>Action</th>
@@ -146,8 +147,10 @@
                 if (response.status == 200) {
                     view_url = "{% url 'superuser:storeTransactionView' 1 %}";
                     edit_url = "{% url 'superuser:storeTransactionEdit' 1 %}";
+                    print_url = "{% url 'superuser:storeTransactionPrint' 1 %}";
+                    
                     page_items = response.page_items;
-                    console.log(page_items)
+                    // console.log(page_items)
                     tbody_text = ``;
                     for (let index = 0; index < page_items.length; index++) {
                         const element = page_items[index];
@@ -155,6 +158,7 @@
                                 <td>${((response.current_page - 1) * response.per_page) +  index + 1}</td>
                                 <td>${element.vendor__name ? element.vendor__name : 'Self'}</td>
                                 <td>${element.transaction_number}</td>
+                                <td>${element.invoice_challan}</td>
                                 <td>${element.transaction_date}</td>
                                 <td>₹${element.total_amount}</td>
                                 <td>
@@ -165,10 +169,14 @@
                                 <a  href="${edit_url.replace('1', element.pk)}" class="table-action mg-r-10"> <i class="fa fa-pencil"></i> </a>    
                                 {% endif %}
                                 {% if request.user.is_superuser == 1 or 'delete_store_transaction'|get_session_permission:request is not None %}
-                                <a id="delete-btn" data-id="${element.pk}" data-name="${element.transaction_number}" href="javascript:void(0)" class="table-action mg-r-10"> <i class="fa fa-trash"></i> </a>
+                                <a hidden id="delete-btn" data-id="${element.pk}" data-name="${element.transaction_number}" href="javascript:void(0)" class="table-action mg-r-10"> <i class="fa fa-trash"></i> </a>
+                                {% endif %}
+                                {% if request.user.is_superuser == 1 or 'change_store_transaction'|get_session_permission:request is not None %}
+                                ${element.is_logical_grn_store == 1 ? `<a href="${print_url.replace('1', element.pk)}" class="table-action mg-r-10" target="_blank"> <i class="fa fa-print"></i> </a>` : ''}
                                 {% endif %}
                                 </td>
                             </tr>`;
+                    
                     }
                     // pagination_text = ``;
                     // if (response.total_pages > 1) {

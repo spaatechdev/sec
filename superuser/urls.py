@@ -80,6 +80,7 @@ urlpatterns = [
     path('gst-list', views.gstList, name='gstList'),
     path('gst-add', views.gstAdd, name='gstAdd'),
     
+    path('bill-of-material-master-list', views.billOfMaterialMasterList, name='billOfMaterialMasterList'),
     path('bill-of-material-list', views.billOfMaterialList, name='billOfMaterialList'),
     path('bill-of-material-add', views.billOfMaterialAdd, name='billOfMaterialAdd'),
     path('bill-of-material-edit/<int:id>', views.billOfMaterialEdit, name='billOfMaterialEdit'),
@@ -97,20 +98,23 @@ urlpatterns = [
     path('transaction-type-edit/<int:id>', views.transactionTypeEdit, name='transactionTypeEdit'),
 
     path('store-item-list', views.storeItemList, name='storeItemList'),
+    path('store-item-tracking-list', views.storeItemTrackingList, name='storeItemTrackingList'),
     path('store-item-add', views.storeItemAdd, name='storeItemAdd'),
     path('store-item-edit/<int:id>', views.storeItemEdit, name='storeItemEdit'),
-    
+    path('stock-transfer', views.stockTransfer, name='stockTransfer'),
 
     path('store-transaction-list', views.storeTransactionList, name='storeTransactionList'),
     path('store-transaction-add', views.storeTransactionAdd, name='storeTransactionAdd'),
     path('store-transaction-edit/<int:id>', views.storeTransactionEdit, name='storeTransactionEdit'),
     path('store-transaction-view/<int:id>', views.storeTransactionView, name='storeTransactionView'),
+    path('store-transaction-print/<int:id>', views.storeTransactionPrint, name='storeTransactionPrint'),
     
 
     path('job-order-list', views.jobOrderList, name='jobOrderList'),
     path('job-order-add', views.jobOrderAdd, name='jobOrderAdd'),
     path('job-order-edit/<int:id>', views.jobOrderEdit, name='jobOrderEdit'),
-    path('job-order-view/<int:id>', views.jobOrderView, name='jobOrderView'),
+    path('job-order-view/<int:id>', views.jobOrderView, name='jobOrderView'), 
+     path('job-order-print/<int:id>', views.jobOrderPrint, name='jobOrderPrint'),
     
 
     # material issue url --- developed by saswata
@@ -130,6 +134,7 @@ urlpatterns = [
     path('material-return-add',views.materialReturnAdd, name='materialReturnAdd'),
     path('material-return-edit/<int:id>',views.materialReturnEdit, name='materialReturnEdit'),
     path('material-return-view/<int:id>',views.materialReturnView, name='materialReturnView'),
+    path('material-return-print/<int:id>',views.materialReturnPrint, name='materialReturnPrint'),
 
     # path on transit transaction ---developed by saswata
 
@@ -172,4 +177,7 @@ urlpatterns = [
     path('report-production-transaction-view/<int:id>', views.reportProductionView, name='reportProductionView'),
 
     path('invoice-store-transaction-maigration',views.invoiceStoreTransactionMaigration, name='invoiceStoreTransactionMaigration'),
+    
+    path('store-item-current-migrate',views.storeItemCurrentMigrate, name='storeItemCurrentMigrate'),
+
 ]

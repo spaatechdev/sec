@@ -154,13 +154,16 @@
                                             name="amount_with_gst" min="0.01" class="form-control amount_with_gst"
                                             placeholder="0.00" required>
                                     </div>
-                                    <div class="col-md-1 mb-3">
+                                    <div class="col-md-2 mb-3">
                                         <label>Store <span class="required-indicator">*</span></label>
                                         <div class="input-group">
                                             <select class="custom-select selectpicker store_id" name="store_id" required>
                                                 <option value="">Choose...</option>
                                             </select>
                                         </div>
+                                    </div>
+                                    <div class="col-md-1 mb-3 logical_grn_show">
+                                        <input type="hidden" name="logical_grn" class="logical_grn" value="0">
                                     </div>
                                     <div class="col-md-1 mb-3">
                                         <label for="itemInspect">Inspect</label><br>
@@ -319,7 +322,7 @@
 
     function renderItemDropdown(){
         $('.item_id').each(function(){
-            // console.log("store transaction 296");
+            // // console.log("store transaction 296");
             let selected_item_pk=$(this).val()
             $(this).children("option").each(function(index, element){
                 if( $(this).val()!==selected_item_pk && item_options_used_pk.includes($(this).val()) ){
@@ -339,10 +342,49 @@
         }); 
     }
 
+    $(document).on('change','.store_id',function(){
+        let newHtml = `<label for="logical_grn_inspect">Logical Grn</label><br>
+                                        <input type="hidden" name="logical_grn" class="logical_grn" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">`
+        let thisHtmla = $(this).parent().closest('.content_parent').find('.logical_grn_show')
+       
+        $(thisHtmla).empty()
+        let value = $(this).val()
+        $.ajax({
+            url: "{% url 'api:storeList' %}?id="+value,
+            type: 'GET',
+            data: ({}),
+            headers: {
+                'Authorization': getCookieValue("accessToken")
+            },
+            success: function (response) {
+                if (response.status == 200) {
+                    let vendorId = response.page_items[0]?.vendor_id;
+                    console.log(vendorId);
+                    
+                    if (vendorId){
+                       
+                        thisHtmla.html(newHtml)
+                    }
+                    else{
+                        thisHtmla.html(`<input type="hidden" name="logical_grn" class="logical_grn" value="0">`)
+                    }
+                
+                    
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function (error) {
+                $('.error-msg-txt').text(error.responseJSON != null ? error.responseJSON.detail : error.statusText);
+            }
+        });
+       
+    });
+
     $(document).on('change', '#with_purchase_job_order', function () {
-        // console.log("328");
+        // // console.log("328");
         purchase_job_order_type = $(this).val();
-        // console.log(purchase_job_order_type);
+        // // console.log(purchase_job_order_type);
         //purchase order
         if (parseInt(purchase_job_order_type) == 1  ) {
             // $('.purchase_job_order_type_content').show();
@@ -368,7 +410,7 @@
         }
         else{
             // $('.purchase_job_order_type_content').hide();
-            console.log(378);
+            // console.log(378);
             
             $('#purchase_job_order_header_id').removeAttr('required');
             $('#purchase_job_order_header_id').attr('disabled','true');
@@ -425,13 +467,16 @@
                                             name="amount_with_gst" min="0.01" class="form-control amount_with_gst"
                                             placeholder="0.00" required>
                                     </div>
-                                    <div class="col-md-1 mb-3">
+                                    <div class="col-md-2 mb-3">
                                         <label>Store <span class="required-indicator">*</span></label>
                                         <div class="input-group">
                                             <select class="custom-select selectpicker store_id" name="store_id" required>
                                                 ${store_options_text}
                                             </select>
                                         </div>
+                                    </div>
+                                   <div class="col-md-1 mb-3 logical_grn_show">
+                                         <input type="hidden" name="logical_grn" class="logical_grn" value="0">
                                     </div>
                                      <div class="col-md-1 mb-3">
                                             <label for="itemInspect">Inspect</label><br>
@@ -459,7 +504,7 @@
         let vendor_id = $(this).val();
         let with_purchase_job_order = $('#with_purchase_job_order').val()
         if(with_purchase_job_order == 2){
-            // console.log('446');
+            // // console.log('446');
             callJobOrderList()
             purchase_details = `<div class="form-row content_parent">
                                         <div class="col-md-2 mb-3">
@@ -505,13 +550,16 @@
                                                 name="amount_with_gst" min="0.01" class="form-control amount_with_gst"
                                                 placeholder="0.00" required>
                                         </div>
-                                        <div class="col-md-1 mb-3">
+                                        <div class="col-md-2 mb-3">
                                             <label>Store <span class="required-indicator">*</span></label>
                                             <div class="input-group">
                                                 <select class="custom-select selectpicker store_id" name="store_id" required>
                                                     ${store_options_text}
                                                 </select>
                                             </div>
+                                        </div>
+                                        <div class="col-md-1 mb-3 logical_grn_show">
+                                             <input type="hidden" name="logical_grn" class="logical_grn" value="0">
                                         </div>
                                          <div class="col-md-1 mb-3">
                                             <label for="itemInspect">Inspect</label><br>
@@ -533,7 +581,7 @@
             });
         }
         else{
-            // console.log('525');
+            // // console.log('525');
             $.ajax({
                 url: "{% url 'api:purchaseOrderList' %}?vendor_id=" + vendor_id + "&delivery_status=1,2",
                 type: 'GET',
@@ -593,7 +641,7 @@
                                                 name="amount_with_gst" min="0.01" class="form-control amount_with_gst"
                                                 placeholder="0.00" required>
                                         </div>
-                                        <div class="col-md-1 mb-3">
+                                        <div class="col-md-2 mb-3">
                                             <label>Store <span class="required-indicator">*</span></label>
                                             <div class="input-group">
                                                 <select class="custom-select selectpicker store_id" name="store_id" required>
@@ -601,9 +649,12 @@
                                                 </select>
                                             </div>
                                         </div>
-                                         <div class="col-md-1 mb-3">
-                                            <label for="itemInspect">Inspect</label><br>
-                                            <input type="hidden" name="inspect" class="insc" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
+                                        <div class="col-md-1 mb-3">
+                                            <label for="itemInspect">Logical Grn</label><br>
+                                            <input type="hidden" name="logical_grn" class="logical_grn" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
+                                        </div>
+                                        <div class="col-md-1 mb-3 logical_grn_show">
+                                             <input type="hidden" name="logical_grn" class="logical_grn" value="0">
                                         </div>
                                         <div class="col-md-1 mb-4 text-center ">
                                             <button type="button" class="btn add_item mt-1">
@@ -668,13 +719,16 @@
                                                 name="amount_with_gst" min="0.01" class="form-control amount_with_gst"
                                                 placeholder="0.00" required>
                                         </div>
-                                        <div class="col-md-1 mb-3">
+                                        <div class="col-md-2 mb-3">
                                             <label>Store <span class="required-indicator">*</span></label>
                                             <div class="input-group">
                                                 <select class="custom-select selectpicker store_id" name="store_id" required>
                                                     ${store_options_text}
                                                 </select>
                                             </div>
+                                        </div>
+                                        <div class="col-md-1 mb-3 logical_grn_show">
+                                             <input type="hidden" name="logical_grn" class="logical_grn" value="0">
                                         </div>
                                         <div class="col-md-1 mb-3">
                                             <label for="itemInspect">Inspect</label><br>
@@ -760,13 +814,16 @@
                                             name="amount_with_gst" min="0.01" class="form-control amount_with_gst"
                                             placeholder="0.00" required>
                                     </div>
-                                    <div class="col-md-1 mb-3">
+                                    <div class="col-md-2 mb-3">
                                         <label>Store <span class="required-indicator">*</span></label>
                                         <div class="input-group">
                                             <select class="custom-select selectpicker store_id" name="store_id" required>
                                                 ${store_options_text}
                                             </select>
                                         </div>
+                                    </div>
+                                   <div class="col-md-1 mb-3 logical_grn_show">
+                                         <input type="hidden" name="logical_grn" class="logical_grn" value="0">
                                     </div>
                                      <div class="col-md-1 mb-3">
                                             <label for="itemInspect">Inspect</label><br>
@@ -890,11 +947,13 @@
 
     $(document).on('change', '#purchase_job_order_header_id', function () {
         let header_id = $(this).val();
-        // console.log(header_id);
+        // // console.log(header_id);
         let jobOrPurchaseOrder = parseInt($('#with_purchase_job_order').val())
-        console.log(jobOrPurchaseOrder);
+        // console.log(jobOrPurchaseOrder);
         if(jobOrPurchaseOrder == 2 ){
-
+            if (header_id != "") {
+                $("#with_purchase_job_order").val(2);
+            }
             $.ajax({
                 url: "{% url 'api:jobOrderDetails' %}?header_id=" + header_id +'&direction=incoming',
                 type: 'GET',
@@ -904,10 +963,10 @@
                 },
                 success: function (response) {
                     if (response.status == 200) {
-                        // console.log("784");
+                        // // console.log("784");
                         var purchase_details = ``;
                         var page_items = response.job_order_details
-                        console.log(page_items);
+                        // console.log(page_items);
                         // var total_amount = response.header_detail[0].total_amount - response.header_detail[0].delivered_total_amount;
                         for (let index = 0; index < page_items.length; index++) {
                                 purchase_details += `<div class="form-row content_parent">
@@ -959,13 +1018,16 @@
                                                 name="amount_with_gst" min="0.01" class="form-control amount_with_gst"
                                                 value="${((page_items[index].quantity_result *page_items[index].item__price)*(1+(page_items[index].item__item_type__gst_percentage / 100))).toFixed(2)}" placeholder="0.00" required>
                                         </div>
-                                        <div class="col-md-1 mb-3">
+                                        <div class="col-md-2 mb-3">
                                             <label>Store <span class="required-indicator">*</span></label>
                                             <div class="input-group">
                                                 <select class="custom-select selectpicker store_id" name="store_id" required>
                                                     ${store_options_text}
                                                 </select>
                                             </div>
+                                        </div>
+                                        <div class="col-md-1 mb-3 logical_grn_show">
+                                             <input type="hidden" name="logical_grn" class="logical_grn" value="0">
                                         </div>
                                          <div class="col-md-1 mb-3">
                                             <label for="itemInspect">Inspect</label><br>
@@ -1010,7 +1072,7 @@
                 },
                 success: function (response) {
                     if (response.status == 200) {
-                        // console.log("784");
+                        // // console.log("784");
                         var purchase_details = ``;
                         // var total_amount = response.header_detail[0].total_amount - response.header_detail[0].delivered_total_amount;
                         for (let index = 0; index < response.page_items.length; index++) {
@@ -1061,13 +1123,16 @@
                                                 name="amount_with_gst" min="0.01" class="form-control amount_with_gst"
                                                 value="${(((response.page_items[index].quantity - response.page_items[index].delivered_quantity)*response.page_items[index].rate)*(1+(response.page_items[index].gst_percentage / 100))).toFixed(2)}" placeholder="0.00" required>
                                         </div>
-                                        <div class="col-md-1 mb-3">
+                                        <div class="col-md-2 mb-3">
                                             <label>Store <span class="required-indicator">*</span></label>
                                             <div class="input-group">
                                                 <select class="custom-select selectpicker store_id" name="store_id" required>
                                                     ${store_options_text}
                                                 </select>
                                             </div>
+                                        </div>
+                                        <div class="col-md-1 mb-3 logical_grn_show">
+                                             <input type="hidden" name="logical_grn" class="logical_grn" value="0">
                                         </div>
                                          <div class="col-md-1 mb-3">
                                             <label for="itemInspect">Inspect</label><br>
@@ -1099,10 +1164,12 @@
             });
         
         }
+        
     });
 
     $(document).on('submit', '#create_form', function (e) {
         e.preventDefault();
+        
         $('.submit-btn').text('Submitting...');
         $('.submit-btn').prop('disabled', true);
         var formData = new FormData(create_form);
@@ -1149,10 +1216,10 @@
     //     }
     // });
         // function check(element){
-        //     // console.log($(element).parent().closest('.content_parent').html());
-        //     // console.log($(element).parent().closest('.inspect').find('.insc').val());
-        //     // console.log($(element).parent().closest('.inspect').html());
-        //     // console.log($(element).parent().html());
+        //     // // console.log($(element).parent().closest('.content_parent').html());
+        //     // // console.log($(element).parent().closest('.inspect').find('.insc').val());
+        //     // // console.log($(element).parent().closest('.inspect').html());
+        //     // // console.log($(element).parent().html());
         //     if($(element).val() === "0"){
         //         $(element).val("1")
         //         $(element).parent().closest('.inspect').find('.insc').val("1")
@@ -1165,9 +1232,9 @@
         
         function callJobOrderList(){
                 vendor_id = $('#vendor_id').val()
-                console.log(vendor_id);
+                console.log(vendor_id,'aaa');
                 $.ajax({
-                url: "{% url 'api:jobOrderList' %}?find_all=1&vendor_id=" + vendor_id+"&material_reciept=0&material_issue=1,2&with_item=True&manufacturing_type=Third party",
+                url: "{% url 'api:jobOrderList' %}?find_all=1&vendor_id=" + vendor_id+"&material_reciept=0&material_issue=2,3&with_item=True&manufacturing_type=Third party",
                 type: 'GET',
                 data: ({}),
                 headers: {
@@ -1192,6 +1259,8 @@
                             
                             $("#total_amount").val(0);
                             $("#with_purchase_job_order").val(0);
+                            $("#with_purchase_job_order").val("0").change();
+
 
                         }
                         
@@ -1231,6 +1300,8 @@
                             
                             $("#total_amount").val(0);
                             $("#with_purchase_job_order").val(0);
+                            $("#with_purchase_job_order").val("0").change();
+
                         }
                         
                     } else {

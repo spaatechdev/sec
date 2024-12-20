@@ -136,6 +136,9 @@
                                 <input type="text" onkeyup="checkMaxMin(this)"
                                     name="invoice_challan"  class="form-control invoice_challan" value="{{storeTransaction.invoice_challan}}"
                                     placeholder="Invoice/challanNo" required>
+                                    <input type="hidden" 
+                                    name="invoice_challan_old"  class="form-control invoice_challan_old" value="{{storeTransaction.invoice_challan}}"
+                                     >
                             </div>
                             
                             <div class="purchase_order_details col-md-12">
@@ -314,6 +317,7 @@
     var item_options = [];
     var item_options_used_pk = [];
     var store_options_text = ``;
+    var form , initialFormData ;
     $('.selectpicker').select2({
         placeholder: ''
     });
@@ -338,8 +342,19 @@
             item_options_used_pk.push($(this).val())
         }); 
     }
+    // Function to get form data as a JSON string
+    function getFormData(form) {
+        var formData = new FormData(form[0]);
+        var object = {};
+        formData.forEach((value, key) => {
+            object[key] = value;
+        });
+        return JSON.stringify(object);
+    }
 
     $(document).ready(function () {
+        let form = $('#create_form');
+        initialFormData = getFormData(form);
         if("{{storeTransaction.purchase_order_header_id}}"=="None"){
             $(".item_id").each(function() {
                 item_options_used_pk.push($(this).val())
@@ -425,7 +440,7 @@
         //         if (response.status == 200) {
         //             var purchase_details = ``;
         //             for (let index = 0; index < response.page_items.length; index++) {
-        //                 // console.log(response.page_items[index].quantity, response.page_items[index].delivered_quantity)
+        //                 // // console.log(response.page_items[index].quantity, response.page_items[index].delivered_quantity)
         //                 // total_amount = response.header_detail[0].total_amount - response.header_detail[0].delivered_total_amount;
         //                 purchase_details += `<div class="form-row content_parent">
         //                         <div class="col-md-3 mb-3">
@@ -504,7 +519,7 @@
 
     $(document).on('change', '#with_purchase_job_order', function () {
         purchase_order_type = $(this).val();
-        console.log("{{storeTransaction.purchase_order_header_id}}");
+        // console.log("{{storeTransaction.purchase_order_header_id}}");
         if("{{storeTransaction.purchase_order_header_id}}"=="None" && parseInt(purchase_order_type)==0){
             (function(){
                 location.reload(true);
@@ -570,6 +585,10 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="col-md-1 mb-1">
+                                            <label for="itemInspect">Inspect</label><br>
+                                            <input type="hidden" name="itemInspect" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
+                                        </div>
                                     <div class="col-md-1 mb-4 text-center ">
                                         <button type="button" class="btn add_item mt-1">
                                             <i class="fa fa-plus"></i>
@@ -638,6 +657,10 @@
                                                 ${store_options_text}
                                             </select>
                                         </div>
+                                    </div>
+                                    <div class="col-md-1 mb-1">
+                                            <label for="itemInspect">Inspect</label><br>
+                                            <input type="hidden" name="itemInspect" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
                                     </div>
                                     <div class="col-md-1 mb-4 text-center ">
                                         <button type="button" class="btn add_item mt-1"><i class="fa fa-plus"></i></button>
@@ -731,6 +754,10 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="col-md-1 mb-1">
+                                            <label for="itemInspect">Inspect</label><br>
+                                            <input type="hidden" name="itemInspect" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
+                                    </div>
                                     <div class="col-md-1 mb-4 text-center ">
                                         <button type="button" class="btn add_item mt-1">
                                             <i class="fa fa-plus"></i>
@@ -799,6 +826,10 @@
                                                 ${store_options_text}
                                             </select>
                                         </div>
+                                    </div>
+                                    <div class="col-md-1 mb-1">
+                                            <label for="itemInspect">Inspect</label><br>
+                                            <input type="hidden" name="itemInspect" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
                                     </div>
                                     <div class="col-md-1 mb-4 text-center ">
                                         <button type="button" class="btn add_item mt-1"><i class="fa fa-plus"></i></button>
@@ -884,6 +915,10 @@
                                                 ${store_options_text}
                                             </select>
                                         </div>
+                                    </div>
+                                    <div class="col-md-1 mb-1">
+                                            <label for="itemInspect">Inspect</label><br>
+                                            <input type="hidden" name="itemInspect" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
                                     </div>
                                     <div class="col-md-1 mb-4 text-center ">
                                         <button type="button" class="btn remove_item mt-1"><i
@@ -1090,6 +1125,10 @@
                                                 </select>
                                             </div>
                                         </div>
+                                        <div class="col-md-1 mb-1">
+                                            <label for="itemInspect">Inspect</label><br>
+                                            <input type="hidden" name="itemInspect" value="0"><input type="checkbox" onclick="this.previousSibling.value=1-this.previousSibling.value" style="transform: scale(2);margin-top: 12px;">
+                                        </div>
                                         <div class="col-md-1 mb-4 text-center ">
                                             <button type="button" class="btn remove_item mt-1"><i class="fa fa-minus"></i></button>
                                         </div>
@@ -1119,6 +1158,15 @@
 
     $(document).on('submit', '#create_form', function (e) {
         e.preventDefault();
+        let form = $('#create_form');
+        
+        let currentFormData = getFormData(form);
+            
+        if (initialFormData === currentFormData) {
+            alert('please update something.');
+            return false; // Stop form submission
+        }
+
         $('.submit-btn').text('Submitting...');
         $('.submit-btn').prop('disabled', true);
         var formData = new FormData(create_form);
