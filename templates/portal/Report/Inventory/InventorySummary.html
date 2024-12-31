@@ -234,7 +234,7 @@
         }
         
         else if (day_month == '3 month'){
-            console.log(244);
+            // console.log(244);
             
             let dateTwoMonthsAgo = new Date();
             dateTwoMonthsAgo.setMonth(dateTwoMonthsAgo.getMonth() - 3);
@@ -319,6 +319,8 @@
         e.preventDefault();
         var formData = new FormData(create_form);
         keyword = formData.get('item_cat_id')
+        $('.submit-btn').text('Submitting...');
+        $('.submit-btn').prop('disabled', true);
         $.ajax({
             type: "POST",
             evalScripts: true,
@@ -331,31 +333,35 @@
             },
             success: function (response) {
                 if (response.status == 200) {
-                    console.log("hi");
+                    // console.log("hi");
                     var table_data = ``;
 
-                    console.log(response.page_items);
+                    // console.log(response.page_items);
                     for (let index=0 ; index < response.page_items.length ;index++ ){
                         table_data += `<tr>
-                                             <td>${index+1}</td>
-                                             <td>${response.page_items[index].date}</td>
-                                             <td>${response.page_items[index].transaction_number}</td>
-                                             <td>${response.page_items[index].vendor}</td>
-                                             <td>${response.page_items[index].item}</td>
-                                             <td>${response.page_items[index].item_category}</td>
-                                              <td>${response.page_items[index].uom}</td>
-                                             <td>${+response.page_items[index].previous_onHand_Quantity || "---"}</td>                                 
-                                             <td>${+response.page_items[index].quantity_order || "---"}</td>
-                                             <td>${+response.page_items[index].stock_in || "---"}</td>
-                                             <td>${+response.page_items[index].stock_out || "---"}</td>
-                                             <td>${+response.page_items[index].onHand_quantity || "---"}</td>
+                                            <td>${index+1}</td>
+                                            <td>${response.page_items[index].date.split("-").reverse().join("-")}</td>
+                                            <td>${response.page_items[index].transaction_number}</td>
+                                            <td>${response.page_items[index].vendor}</td>
+                                            <td>${response.page_items[index].item}</td>
+                                            <td>${response.page_items[index].item_category}</td>
+                                            <td>${response.page_items[index].uom}</td>
+                                            <td>${+response.page_items[index].previous_onHand_Quantity || "---"}</td>                                 
+                                            <td>${+response.page_items[index].quantity_order || "---"}</td>
+                                            <td>${+response.page_items[index].stock_in || "---"}</td>
+                                            <td>${+response.page_items[index].stock_out || "---"}</td>
+                                            <td>${+response.page_items[index].onHand_quantity || "---"}</td>
                             
                                         </tr>`
                     }
                     $('.table_data').html(table_data);
+                    $('.submit-btn').text('Submitting...');
+                    $('.submit-btn').removeAttr('disabled');
                 } 
                 else {
                     alert(response.message);
+                    $('.submit-btn').text('Submit');
+                    $('.submit-btn').prop('disabled', false);
                 }
             },
             error: function (error) {
